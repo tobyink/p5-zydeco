@@ -1604,6 +1604,9 @@ L<Types::Common::String>, and L<Types::Common::Numeric>.
 The ability to choose a toolkit on a package-by-package basis is not
 currently supported. (Though it's implemented in MooX::Press.)
 
+The C<< handles => 1 >> and C<< handles => 2 >> features for enum
+attributes are not supported with Mouse.
+
 =head2 MooX::Pression vs Moops
 
 MooX::Pression has fewer dependencies than Moops, and crucially doesn't
