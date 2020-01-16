@@ -13,3 +13,11 @@
 		item "Better SYNOPSIS showing coercion."^^Documentation;
 		item "Document `enum`."^^Documentation;
 	].
+
+`MooX-Pression 0.003 cpan:TOBYINK`
+	issued  2020-01-16;
+	changeset [
+		item "`class` blocks may be nested."^^Change;
+		item "Document +attrname."^^Documentation;
+		item "Document that `begin` and `end` may only occur once per package."^^Documentation;
+	].
