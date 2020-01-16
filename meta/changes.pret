@@ -21,3 +21,13 @@
 		item "Document +attrname."^^Documentation;
 		item "Document that `begin` and `end` may only occur once per package."^^Documentation;
 	].
+
+`MooX-Pression 0.004 cpan:TOBYINK`
+	issued  2020-01-16;
+	changeset [
+		item "`requires` keyword."^^Addition;
+		item "Recommend Perl 5.18."^^Packaging;
+		item "Require MooX::Press 0.022."^^Packaging;
+		item "Document integration with MooX::Enumeration."^^Documentation;
+		item "Outline key differences with Moops."^^Documentation;
+	].

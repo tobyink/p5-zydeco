@@ -10,7 +10,7 @@ use MooX::Press::Keywords ();
 package MooX::Pression;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.003';
+our $VERSION   = '0.004';
 
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
