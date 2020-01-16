@@ -843,7 +843,7 @@ Per-package C<begin> overrides the global C<begin>.
 
 =head3 C<< end >>
 
-This code gets run early on in the definition of a class or role.
+This code gets run late in the definition of a class or role.
 
   class Person {
     end {
