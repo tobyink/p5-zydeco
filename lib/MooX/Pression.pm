@@ -1839,6 +1839,10 @@ tricky.
 
 Slurpy parameters for methods need to be integrated.
 
+Something like MooX::HandlesVia or Moose native traits would be good.
+MooX::HandlesVia doesn't work well for non-reference values though.
+MooX::Enumeration proves that it's possible to do!
+
 =head1 BUGS
 
 Please report any bugs to
