@@ -430,7 +430,7 @@ sub import {
 	
 	# `coerce` keyword
 	#
-	keyword coerce (Block|Identifier|String $from, 'via', Block|Identifier|String $via, Block? $code) {
+	keyword coerce ('from'?, Block|Identifier|String $from, 'via', Block|Identifier|String $via, Block? $code) {
 		if ($from =~ /^\{/) {
 			$from = "scalar(do $from)"
 		}
@@ -1294,7 +1294,7 @@ like saying C<< via new >>.
     has name   ( type => Str, required => true );
     has gender ( type => Str );
     
-    coerce Str via from_string {
+    coerce from Str via from_string {
       $class->new(name => $_);
     }
   }
@@ -1324,11 +1324,18 @@ can define a coercion as a normal method first:
       $class->new(name => $name);
     }
     
-    coerce Str via from_string;
+    coerce from Str via from_string;
   }
 
 In both cases, a C<< MyApp::Person->from_string >> method is generated
 which can be called to manually coerce a string into a person object.
+
+They keyword C<< from >> is technically optional, but does make the
+statement more readable.
+
+  coerce Str via from_string {      # this works
+    $class->new(name => $_);
+  }
 
 =head3 C<< version >>
 

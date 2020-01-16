@@ -21,7 +21,7 @@ package MyApp {
 			return $class->new(name => $name, gender => 'female');
 		}
 		
-		coerce Str via from_string {
+		coerce from Str via from_string {
 			return $class->new(name => $_);
 		}
 		
