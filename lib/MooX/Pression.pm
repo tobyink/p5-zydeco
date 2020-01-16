@@ -574,17 +574,24 @@ MooX::Pression - express yourself through moo
       method greet (Person *friend, Str *greeting = "Hello") {
         printf("%s, %s!\n", $arg->greeting, $arg->friend->name);
       }
+      
+      coerce from Str via from_string {
+        return $class->new(name => $_);
+      }
     }
   }
   
   use MyApp::Types qw( is_Person );
   
+  # Create a new MyApp::Person object.
+  #
   my $alice  = MyApp->new_woman("Alice");
-  my $bob    = MyApp->new_man("Bob");
-  
-  $alice->greet(friend => $bob, greeting => 'Hi');
-  
   is_Person($alice) or die;
+  
+  # The string "Bob" will be coerced to a MyApp::Person.
+  #
+  $alice->greet(friend => "Bob", greeting => 'Hi');
+
 
 =head1 DESCRIPTION
 
