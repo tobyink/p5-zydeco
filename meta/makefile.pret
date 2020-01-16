@@ -5,10 +5,11 @@
 `MooX-Pression`
 	:runtime-requirement    [ :on "perl 5.014000"^^:CpanId ];
 	:runtime-requirement    [ :on "Import::Into"^^:CpanId ];
-	:runtime-requirement    [ :on "MooX::Press 0.021"^^:CpanId ];
+	:runtime-requirement    [ :on "MooX::Press 0.022"^^:CpanId ];
 	:runtime-requirement    [ :on "Keyword::Declare 0.001014"^^:CpanId ];
 	:runtime-requirement    [ :on "B::Hooks::EndOfScope"^^:CpanId ];
 	:runtime-requirement    [ :on "Exporter::Tiny 1.000000"^^:CpanId ];
+	:runtime-recommendation [ :on "perl 5.018000"^^:CpanId ];
 	:runtime-recommendation [ :on "MooX::TypeTiny"^^:CpanId ];
 	:runtime-recommendation [ :on "Class::XSAccessor"^^:CpanId ];
 	:test-requirement       [ :on "Test::More 0.96"^^:CpanId ];
