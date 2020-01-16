@@ -213,9 +213,9 @@ my $handle_signature = sub {
 			$type_params_stuff .= '},';
 		}
 	}
-
+	
 	# TODO: slurpy still needs thought!
-
+	
 	@signature_var_list = '$arg' if $seen_named;
 	$type_params_stuff .= ']';
 	
@@ -399,6 +399,23 @@ sub import {
 		sprintf('q[%s]->_with(%s);', $me, join q[,], map B::perlstring($_), split /\s*,\s*/, $roles);
 	}
 	
+	# `requires` keyword
+	#
+	keyword requires (Identifier|Block $name, '(', SignatureList $sig, ')') {
+		sprintf(
+			'q[%s]->_requires(%s);',
+			$me,
+			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+		);
+	}
+	keyword requires (Identifier|Block $name) {
+		sprintf(
+			'q[%s]->_requires(%s);',
+			$me,
+			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+		);
+	}
+	
 	# `has` keyword
 	#
 	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix) {
@@ -560,6 +577,10 @@ sub _end {
 sub _with {
 	shift;
 	push @{ $OPTS{with}||=[] }, @_;
+}
+sub _requires {
+	shift;
+	push @{ $OPTS{requires}||=[] }, @_;
 }
 sub _coerce {
 	shift;
@@ -1240,6 +1261,27 @@ In the first, you have not provided a signature and are expected to
 deal with C<< @_ >> in the body of the method. In the second, there
 is a signature, but it is a signature showing that the method expects
 no arguments (other than the invocant of course).
+
+=head3 require
+
+Indicates that a role requires classes to fulfil certain methods.
+
+  role Payable {
+    requires account;
+    requires deposit (Num $amount);
+  }
+  
+  class Employee {
+    extends Person;
+    with Payable;
+    has account;
+    method deposit (Num $amount) {
+      ...;
+    }
+  }
+
+Required methods have an optional signature; this is currently
+ignored but may be useful for self-documenting code.
 
 =head3 C<< before >>
 
