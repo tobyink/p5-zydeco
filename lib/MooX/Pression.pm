@@ -909,9 +909,9 @@ possible to quote types as strings, in which case you don't need to have
 pre-declared them.
 
   class Person {
-    has name   ( is => rw,   type => Str, required => true );
-    has age    ( is => rw,   type => Int );
-    has spouse ( is => rw,   type => 'Person' );
+    has name   ( type => Str, required => true );
+    has age    ( type => Int );
+    has spouse ( type => 'Person' );
     has kids   (
       is      => lazy,
       type    => 'ArrayRef[Person]',
@@ -927,10 +927,17 @@ C<< does => 'SomeRole' >> to force strings to be treated as class names
 or role names instead of type names.
 
   class Person {
-    has name   ( is => rw,   type => Str, required => true );
-    has age    ( is => rw,   type => Int );
-    has spouse ( is => rw,   isa  => 'Person' );
-    has pet    ( is => rw,   isa  => '::Animal' );   # no prefix
+    has name   ( type => Str, required => true );
+    has age    ( type => Int );
+    has spouse ( isa  => 'Person' );
+    has pet    ( isa  => '::Animal' );   # no prefix
+  }
+
+For enumerations, you can define them like this:
+
+  class Person {
+    ...;
+    has status ( enum => ['alive', 'dead', 'undead'] );
   }
 
 It is possible to add hints to the name as a shortcut for common

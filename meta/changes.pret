@@ -11,4 +11,5 @@
 		item "Fix typo in `end` keyword documentation."^^Documentation;
 		item "Allow (and encourage) `from` to follow `coerce`."^^Change;
 		item "Better SYNOPSIS showing coercion."^^Documentation;
+		item "Document `enum`."^^Documentation;
 	].
