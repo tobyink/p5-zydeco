@@ -987,6 +987,17 @@ Moo-style attribute specifications may be given:
 
 Note there is no fat comma after the attribute name! It is a bareword.
 
+Use a plus sign before an attribute name to modify an attribute defined
+in a parent class.
+
+  class Animal {
+    has name ( type => Str, required => false );
+    
+    class Person {
+      has +name ( required => true );
+    }
+  }
+
 C<rw>, C<rwp>, C<ro>, C<lazy>, C<true>, and C<false> are allowed as
 barewords for readability, but C<is> is optional, and defaults to C<rw>.
 

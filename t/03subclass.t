@@ -17,7 +17,7 @@ package MyApp {
 				class Monkey;
 				class Gorilla;
 				class ::Human {
-					has {'+name'} ( required => 1 );
+					has +name ( required => 1 );
 					class Superhuman;
 				}
 			}
