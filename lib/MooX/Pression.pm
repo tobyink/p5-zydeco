@@ -19,12 +19,20 @@ use Exporter::Shiny our @EXPORT = qw( version authority );
 BEGIN {
 	package MooX::Pression::_Gather;
 	my %gather;
+	my %stack;
 	sub import {
 		my ($me, $action, $caller) = (shift, shift, scalar caller);
 		if ($action eq -gather) {
 			while (@_) {
 				my ($k, $v) = splice @_, 0, 2;
 				if (my ($kind,$pkg) = ($k =~ /^(class|role):(.+)$/)) {
+					if ( my @stack = @{ $stack{$me}{$caller}||[] } ) {
+						pop @stack if $stack[-1] eq $pkg;
+						if (@stack) {
+							$v->{_stack} = \@stack;
+							$kind = '_defer_'.$kind;
+						}
+					}
 					push @{ $gather{$me}{$caller}{$kind}||=[] }, $pkg, $v;
 				}
 				else {
@@ -33,15 +41,55 @@ BEGIN {
 			}
 		}
 		elsif ($action eq -go) {
+			if ($gather{$me}{$caller}{'_defer_role'}) {
+				die 'nested roles not currently supported';
+			}
+			if ($gather{$me}{$caller}{'_defer_class'}) {
+				$me->_undefer_classes($gather{$me}{$caller}{'class'}, delete $gather{$me}{$caller}{'_defer_class'});
+			}
 			@_ = ('MooX::Press' => $gather{$me}{$caller});
 			#use Data::Dumper;
 			#warn Dumper \@_;
 			goto \&MooX::Press::import;
 		}
+		elsif ($action eq -parent) {
+			push @{ $stack{$me}{$caller}||=[] }, $_[0];
+		}
+		elsif ($action eq -unparent) {
+			pop @{ $stack{$me}{$caller} };
+		}
 		else {
 			die;
 		}
 	}
+	sub _undefer_classes {
+		my ($me, $classes, $d) = @_;
+		my %class_hash = @$classes;
+		my @deferred;
+		my $max_depth = 0;
+		while (@$d) {
+			my ($class, $spec) = splice(@$d, 0, 2);
+			$spec->{_class_name} = $class;
+			$spec->{_depth}      = @{ $spec->{_stack} };
+			push @deferred, $spec;
+			$max_depth = $spec->{_depth} if $spec->{_depth} > $max_depth;
+		}
+		DEPTH: for my $depth (1 .. $max_depth) {
+			SPEC: for my $spec (@deferred) {
+				next SPEC unless $spec->{_depth} == $depth;
+				my $parent_key = join('|', @{$spec->{_stack}});
+				my $my_key     = join('|', @{$spec->{_stack}}, $spec->{_class_name});
+				push @{ $class_hash{$parent_key}{subclass} ||=[] }, $spec->{_class_name}, $spec;
+				$class_hash{$my_key} = $spec;
+			}
+		}
+		for my $spec (@deferred) {
+			delete $spec->{_stack};
+			delete $spec->{_class_name};
+			delete $spec->{_depth};
+		}
+	}
+	
 	$INC{'MooX/Pression/_Gather.pm'} = __FILE__;
 };
 
@@ -292,7 +340,8 @@ sub import {
 	#
 	keyword class (Bareword $classname, Block $classdfn) {
 		sprintf(
-			'use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s);',
+			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
+			B::perlstring($classname),
 			B::perlstring('class:'.$classname),
 			$me,
 			$classdfn,
@@ -309,7 +358,8 @@ sub import {
 	#
 	keyword role (Bareword $classname, Block $classdfn) {
 		sprintf(
-			'use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s);',
+			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
+			B::perlstring($classname),
 			B::perlstring('role:'.$classname),
 			$me,
 			$classdfn,
@@ -478,7 +528,7 @@ sub authority {
 #
 # CALLBACKS
 #
-
+our @STACK;
 sub _package_callback {
 	shift;
 	my $cb = shift;
@@ -756,6 +806,29 @@ It is possible to create a class without the prefix:
 
 The class name will now be "Person" instead of "MyApp::Person"!
 
+C<class> blocks can be nested. This establishes an inheritance heirarchy.
+
+  class Animal {
+    has name;
+    class Mammal {
+      class Primate {
+        class Monkey;
+        class Gorilla;
+        class Human {
+          class Superhuman;
+        }
+      }
+    }
+    class Bird;
+    class Fish {
+      class Shark;
+    }
+  }
+  
+  my $superman = MyApp->new_superhuman( name => 'Kal El' );
+
+See also C<extends> as an alternative way of declaring inheritance.
+
 =head3 C<< role >>
 
 Define a very basic role:
@@ -769,6 +842,9 @@ Define a more complicated role:
   }
 
 This is just the same as C<class> but defines a role instead of a class.
+
+Roles cannot be nested within each other, nor can roles be nested in classes,
+nor classes in roles.
 
 =head3 C<< type_name >>
 
@@ -856,6 +932,12 @@ It is possible to define a global chunk of code to run too:
 
 Per-package C<begin> overrides the global C<begin>.
 
+Unlike Perl's C<BEGIN> keyword, a package can only have one C<begin>.
+
+If C<class> definitions are nested, C<begin> blocks will be inherited by
+child classes. If a parent class is specified via C<extends>, C<begin>
+blocks will not be inherited.
+
 =head3 C<< end >>
 
 This code gets run late in the definition of a class or role.
@@ -880,6 +962,12 @@ It is possible to define a global chunk of code to run too:
   );
 
 Per-package C<end> overrides the global C<end>.
+
+Unlike Perl's C<END> keyword, a package can only have one C<end>.
+
+If C<class> definitions are nested, C<end> blocks will be inherited by
+child classes. If a parent class is specified via C<extends>, C<end>
+blocks will not be inherited.
 
 =head3 C<< has >>
 
@@ -1374,6 +1462,10 @@ You can set a default version for all packages like this:
     version => 1.0,
   );
 
+If C<class> definitions are nested, C<version> will be inherited by
+child classes. If a parent class is specified via C<extends>, C<version>
+will not be inherited.
+
 =head3 C<< authority >>
 
   class Person {
@@ -1389,6 +1481,10 @@ It is used to indicate who is the maintainer of the package.
     version   => 1.0,
     authority => 'cpan:TOBYINK',
   );
+
+If C<class> definitions are nested, C<authority> will be inherited by
+child classes. If a parent class is specified via C<extends>, C<authority>
+will not be inherited.
 
 =head2 Utilities
 
