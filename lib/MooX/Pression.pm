@@ -1604,6 +1604,238 @@ L<Types::Common::String>, and L<Types::Common::Numeric>.
 The ability to choose a toolkit on a package-by-package basis is not
 currently supported. (Though it's implemented in MooX::Press.)
 
+=head2 MooX::Pression vs Moops
+
+MooX::Pression has fewer dependencies than Moops, and crucially doesn't
+rely on L<Package::Keyword> and L<Devel::CallParser> which have... issues.
+MooX::Pression uses Damian Conway's excellent L<Keyword::Declare>
+(which in turn uses L<PPR>) to handle most parsing needs, so parsing should
+be more predictable.
+
+Here are a few key syntax and feature differences.
+
+=head3 Declaring a class
+
+Moops:
+
+  class Foo::Bar 1.0 extends Foo with Bar {
+    ...;
+  }
+
+MooX::Pression:
+
+  class Foo::Bar {
+    version 1.0;
+    extends Foo;
+    with Bar;
+  }
+
+Moops and MooX::Pression use different logic for determining whether a class
+name is "absolute" or "relative". In Moops, classes containing a "::" are seen
+as absolute class names; in MooX::Pression, only classes I<starting with> "::"
+are taken to be absolute; all others are given the prefix.
+
+Moops:
+
+  package MyApp {
+    use Moops;
+    class Foo {
+      class Bar {
+        class Baz {
+          # Nesting class blocks establishes a naming
+          # heirarchy so this is MyApp::Foo::Bar::Baz!
+        }
+      }
+    }
+  }
+
+MooX::Pression:
+
+  package MyApp {
+    use MooX::Pression;
+    class Foo {
+      class Bar {
+        class Baz {
+          # This is only MyApp::Baz, but nesting
+          # establishes an @ISA chain instead.
+        }
+      }
+    }
+  }
+
+=head3 How namespacing works
+
+Moops:
+
+  use feature 'say';
+  package MyApp {
+    use Moops;
+    use List::Util qw(uniq);
+    class Foo {
+      say __PACKAGE__;         # MyApp::Foo
+      say for uniq(1,2,1,3);   # ERROR!
+      sub foo { ... }          # MyApp::Foo::foo()
+    }
+  }
+
+MooX::Pression:
+
+  use feature 'say';
+  package MyApp {
+    use MooX::Pression;
+    use List::Util qw(uniq);
+    class Foo {
+      say __PACKAGE__;         # MyApp
+      say for uniq(1,2,1,3);   # this works fine
+      sub foo { ... }          # MyApp::foo()
+    }
+  }
+
+This is why you can't use C<sub> to define methods in MooX::Pression.
+You need to use the C<method> keyword. In MooX::Pression, all the code
+in the class definition block is still executing in the parent
+package's namespace!
+
+=head3 Multimethods
+
+Moops:
+
+  class Foo {
+    multi method foo (ArrayRef $x) {
+      say "Fizz";
+    }
+    multi method foo (HashRef $x) {
+      say "Buzz";
+    }
+  }
+  
+  Foo->foo( [] );  # Fizz
+  Foo->foo( {} );  # Buzz
+
+Multimethods are not currently implemented in MooX::Pression.
+The workaround would be something like this:
+
+  class Foo {
+    method foo_arrayref (ArrayRef $x) {
+      say "Fizz";
+    }
+    method foo_hashref (HashRef $x) {
+      say "Buzz";
+    }
+    method foo (ArrayRef|HashRef $x) {
+      is_ArrayRef($x)
+        ? $self->foo_arrayref($x)
+        : $self->foo_hashref($x)
+    }
+  }
+  
+  Foo->foo( [] );  # Fizz
+  Foo->foo( {} );  # Buzz
+
+=head3 Other crazy Kavorka features
+
+Kavorka allows you to mark certain parameters as read-only or aliases,
+allows you to specify multiple names for named parameters, allows you
+to rename the invocant, allows you to give methods and parameters
+attributes, allows you to specify a method's return type, etc, etc.
+
+MooX::Pression's C<method> keyword is unlikely to ever offer as many
+features as that. It is unlikely to offer many more features than it
+currently offers.
+
+If you need fine-grained control over how C<< @_ >> is handled, just
+don't use a signature and unpack C<< @_ >> inside your method body
+however you need to.
+
+=head3 Lexical accessors
+
+Moops automatically imported C<lexical_has> from L<Lexical::Accessor>
+into each class. MooX::Pression does not, but thanks to how namespacing
+works, it only needs to be imported once if you want to use it.
+
+  package MyApp {
+    use MooX::Pression;
+    use Lexical::Accessor;
+    
+    class Foo {
+      my $identifier = lexical_has identifier => (
+        is      => rw,
+        isa     => Int,
+        default => sub { 0 },
+      );
+      
+      method some_method () {
+        $self->$identifier( 123 );    # set identifier
+        ...;
+        return $self->$identifier;    # get identifier
+      }
+    }
+  }
+
+Lexical accessors give you true private object attributes.
+
+=head3 Factories
+
+MooX::Pression puts an emphasis on having a factory package for instantiating
+objects. Moops didn't have anything similar.
+
+=head3 C<augment> and C<override>
+
+These are L<Moose> method modifiers that are not implemented by L<Moo>.
+Moops allows you to use these in Moose and Mouse classes, but not Moo
+classes. MooX::Pression simply doesn't support them.
+
+=head3 Type Libraries
+
+Moops allowed you to declare multiple type libraries, define type
+constraints in each, and specify for each class and role which type
+libraries you want it to use.
+
+MooX::Pression automatically creates a single type library for all
+your classes and roles within a module to use, and automatically
+populates it with the types it thinks you might want.
+
+If you need to use other type constraints:
+
+  package MyApp {
+    use MooX::Pression;
+    # Just import types into the factory package!
+    use Types::Path::Tiny qw( Path );
+    
+    class DataSource {
+      has file => ( type => Path );
+      
+      method set_file ( Path $file ) {
+        $self->file( $file );
+      }
+    }
+  }
+  
+  my $ds = MyApp->new_datasource;
+  $ds->set_file('blah.txt');      # coerce Str to Path
+  print $ds->file->slurp_utf8;
+
+=head3 Constants
+
+Moops:
+
+  class Foo {
+    define PI = 3.2;
+  }
+
+MooX::Pression:
+
+  class Foo {
+    constant PI = 3.2;
+  }
+
+=head2 Future Directions
+
+I'd like to consider adding Package::Variant support if that isn't too
+tricky.
+
+Slurpy parameters for methods need to be integrated.
+
 =head1 BUGS
 
 Please report any bugs to
