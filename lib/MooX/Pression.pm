@@ -549,7 +549,7 @@ MooX::Pression - express yourself through moo
 
 =head1 SYNOPSIS
 
-MyApp.pm:
+MyApp.pm
 
   use v5.18;
   use strict;
