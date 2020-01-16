@@ -1060,7 +1060,32 @@ For enumerations, you can define them like this:
     has status ( enum => ['alive', 'dead', 'undead'] );
   }
 
-It is possible to add hints to the name as a shortcut for common
+MooX::Pression integrates support for L<MooX::Enumeration> (and
+L<MooseX::Enumeration>).
+
+  class Person {
+    ...;
+    has status (
+      enum    => ['alive', 'dead', 'undead'],
+      default => 'alive',
+      handles => 1,
+    );
+  }
+  
+  my $bob = MyApp->new_person;
+  if ( $bob->is_alive ) {
+    ...;
+  }
+
+C<< handles => 1 >> creates methods named C<is_alive>, C<is_dead>, and
+C<is_undead>, and C<< handles => 2 >> creates methods named
+C<status_is_alive>, C<status_is_dead>, and C<status_is_undead>.
+
+Checking C<< $bob->status eq 'alvie' >> is prone to typos, but
+C<< $bob->status_is_alvie >> will cause a runtime error because the
+method is not defined.
+
+It is possible to add hints to the attribute name as a shortcut for common
 specifications.
 
   class Person {
