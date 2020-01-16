@@ -10,7 +10,7 @@ use MooX::Press::Keywords ();
 package MooX::Pression;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.001';
+our $VERSION   = '0.002';
 
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
@@ -549,7 +549,9 @@ MooX::Pression - express yourself through moo
 
 =head1 SYNOPSIS
 
-  use v5.14;
+MyApp.pm:
+
+  use v5.18;
   use strict;
   use warnings;
   
@@ -580,7 +582,13 @@ MooX::Pression - express yourself through moo
       }
     }
   }
-  
+
+my_script.pl
+
+  use v5.18;
+  use strict;
+  use warnings;
+  use MyApp;
   use MyApp::Types qw( is_Person );
   
   # Create a new MyApp::Person object.
@@ -591,7 +599,6 @@ MooX::Pression - express yourself through moo
   # The string "Bob" will be coerced to a MyApp::Person.
   #
   $alice->greet(friend => "Bob", greeting => 'Hi');
-
 
 =head1 DESCRIPTION
 
