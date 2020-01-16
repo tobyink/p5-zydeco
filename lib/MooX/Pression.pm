@@ -608,7 +608,8 @@ have been amped up.
 It's more opinionated about API design and usage than Moops is, but in
 most cases, it should be fairly easy to port Moops code to MooX::Pression.
 
-MooX::Pression requires Perl 5.14.0 or above.
+MooX::Pression requires Perl 5.18.0 or above. It may work on Perl 5.14.x
+and Perl 5.16.x partly, but there are likely to be issues.
 
 L<MooX::Press> is a less magic version of MooX::Pression and only requires
 Perl 5.8.8 or above.
