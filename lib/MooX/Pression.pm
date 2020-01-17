@@ -1782,7 +1782,7 @@ MooX::Pression exports C<rw>, C<ro>, C<rwp>, and C<lazy> constants
 which make your attribute specs a little cleaner looking.
 
 MooX::Pression exports C<blessed> from L<Scalar::Util> because that can
-be handy to habe, and C<confess> from L<Carp>. MooX::Pression's copy
+be handy to have, and C<confess> from L<Carp>. MooX::Pression's copy
 of C<confess> is super-powered and runs its arguments through C<sprintf>.
 
   before vote {
