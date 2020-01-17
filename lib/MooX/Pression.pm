@@ -914,7 +914,7 @@ Define a more complicated class:
     ...;
   }
 
-Note that if the C<class> keyword without a block, it does I<not> act like
+Note that for the C<class> keyword without a block, it does I<not> act like
 the C<package> keyword by changing the "ambient" package. It just defines a
 totally empty class with no methods or attributes.
 
@@ -1019,7 +1019,7 @@ instances of it. It's like a template for generating classes. Then
 
 Because there are never any instances of "MyApp::Species", it doesn't
 make sense to have a B<Species> type constraint. Instead there are
-B<SpeciesClass> and B<SpeciesInstance> classes.
+B<SpeciesClass> and B<SpeciesInstance> type constraints.
 
   use MyApp::Types -is;
   
