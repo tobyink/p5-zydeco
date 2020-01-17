@@ -235,7 +235,7 @@ my $handle_signature_list = sub {
 keytype RoleList is /
 	\+?\s*
 	(
-		(?&PerlBlock) | (?&PerlIdentifier)
+		(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 	)
 	(
 		(?:\s*\?) | (?&PerlList)
@@ -246,7 +246,7 @@ keytype RoleList is /
 		\s*
 		\+?\s*
 		(
-			(?&PerlBlock) | (?&PerlIdentifier)
+			(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 		)
 		(
 			(?:\s*\?) | (?&PerlList)
@@ -279,7 +279,7 @@ my $handle_rolelist = sub {
 			$rolelist =~ s/^\Q$role//xs;
 			$rolelist =~ s/^\s+//xs;
 		}
-		elsif ($rolelist =~ /^((?&PerlIdentifier)) $PPR::GRAMMAR/xso) {
+		elsif ($rolelist =~ /^((?&PerlQualifiedIdentifier)) $PPR::GRAMMAR/xso) {
 			$role = $1;
 			$rolelist =~ s/^\Q$role//xs;
 			$rolelist =~ s/^\s+//xs;
@@ -431,7 +431,7 @@ sub import {
 	
 	# `class` keyword
 	#
-	keyword class (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+	keyword class (QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
 		sprintf(
@@ -441,7 +441,7 @@ sub import {
 			$munged_code,
 		);
 	}
-	keyword class (Bareword $classname, Block $classdfn) {
+	keyword class (QualifiedIdentifier $classname, Block $classdfn) {
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
 			B::perlstring($classname),
@@ -450,7 +450,7 @@ sub import {
 			$classdfn,
 		);
 	}
-	keyword class (Bareword $classname, ';') {
+	keyword class (QualifiedIdentifier $classname, ';') {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
 			B::perlstring('class:'.$classname),
@@ -459,7 +459,7 @@ sub import {
 	
 	# `role` keyword
 	#
-	keyword role (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+	keyword role (QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
 		sprintf(
@@ -469,7 +469,7 @@ sub import {
 			$munged_code,
 		);
 	}
-	keyword role (Bareword $classname, Block $classdfn) {
+	keyword role (QualifiedIdentifier $classname, Block $classdfn) {
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
 			B::perlstring($classname),
@@ -478,7 +478,7 @@ sub import {
 			$classdfn,
 		);
 	}
-	keyword role (Bareword $classname, OWS, ';') {
+	keyword role (QualifiedIdentifier $classname, OWS, ';') {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
 			B::perlstring('role:'.$classname),
@@ -610,7 +610,7 @@ sub import {
 	
 	# `coerce` keyword
 	#
-	keyword coerce ('from'?, Block|Identifier|String $from, 'via', Block|Identifier|String $via, Block? $code) {
+	keyword coerce ('from'?, Block|QualifiedIdentifier|String $from, 'via', Block|Identifier|String $via, Block? $code) {
 		if ($from =~ /^\{/) {
 			$from = "scalar(do $from)"
 		}
