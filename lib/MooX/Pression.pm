@@ -129,9 +129,9 @@ keytype SignatureList is /
 			\? | (\s*=\s*(?&PerlTerm))
 		)?
 	)*
-/xs  # fix for highlighting /
+/xs;  # fix for highlighting /
 
-my $handle_signature = sub {
+my $handle_signature_list = sub {
 	my $sig = $_[0];
 	my $seen_named = 0;
 	my $seen_pos   = 0;
@@ -143,7 +143,7 @@ my $handle_signature = sub {
 		
 		push @parsed, {};
 		
-		if ($sig =~ /^((?&PerlBlock)) $PPR::GRAMMAR/xs) {
+		if ($sig =~ /^((?&PerlBlock)) $PPR::GRAMMAR/xso) {
 			my $type = $1;
 			$parsed[-1]{type}          = $type;
 			$parsed[-1]{type_is_block} = 1;
@@ -162,14 +162,14 @@ my $handle_signature = sub {
 			$parsed[-1]{type_is_block} = 0;
 		}
 		
-		if ($sig =~ /^\*((?&PerlIdentifier)) $PPR::GRAMMAR/xs) {
+		if ($sig =~ /^\*((?&PerlIdentifier)) $PPR::GRAMMAR/xso) {
 			my $name = $1;
 			$parsed[-1]{name} = $name;
 			++$seen_named;
 			$sig =~ s/^\*\Q$name//xs;
 			$sig =~ s/^\s+//xs;
 		}
-		elsif ($sig =~ /^((?&PerlVariable)) $PPR::GRAMMAR/xs) {
+		elsif ($sig =~ /^((?&PerlVariable)) $PPR::GRAMMAR/xso) {
 			my $name = $1;
 			$parsed[-1]{name} = $name;
 			++$seen_pos;
@@ -181,7 +181,7 @@ my $handle_signature = sub {
 			$parsed[-1]{optional} = 1;
 			$sig =~ s/^\?\s*//xs;
 		}
-		elsif ($sig =~ /^=\s*((?&PerlTerm)) $PPR::GRAMMAR/xs) {
+		elsif ($sig =~ /^=\s*((?&PerlTerm)) $PPR::GRAMMAR/xso) {
 			my $default = $1;
 			$parsed[-1]{default} = $default;
 			$sig =~ s/^=\s*\Q$default//xs;
@@ -232,6 +232,93 @@ my $handle_signature = sub {
 	);
 };
 
+keytype RoleList is /
+	\+?\s*
+	(
+		(?&PerlBlock) | (?&PerlIdentifier)
+	)
+	(
+		(?:\s*\?) | (?&PerlList)
+	)?
+	(
+		\s*
+		,
+		\s*
+		\+?\s*
+		(
+			(?&PerlBlock) | (?&PerlIdentifier)
+		)
+		(
+			(?:\s*\?) | (?&PerlList)
+		)?
+	)*
+/xs;  #/*
+
+my $handle_rolelist = sub {
+	my ($rolelist, $kind) = @_;
+	my @return;
+	
+	while (length $rolelist) {
+		$rolelist =~ s/^\s+//xs;
+		
+		my $prefix = '';
+		my $role = undef;
+		my $role_is_block = 0;
+		my $suffix = '';
+		my $role_params   = undef;
+		
+		if ($rolelist =~ /^\+/xs) {
+			die 'unexpected plus sign' if $kind eq 'role';
+			$prefix = '+';
+			$rolelist =~ s/^\+\s*//xs;
+		}
+		
+		if ($rolelist =~ /^((?&PerlBlock)) $PPR::GRAMMAR/xso) {
+			$role = $1;
+			$role_is_block = 1;
+			$rolelist =~ s/^\Q$role//xs;
+			$rolelist =~ s/^\s+//xs;
+		}
+		elsif ($rolelist =~ /^((?&PerlIdentifier)) $PPR::GRAMMAR/xso) {
+			$role = $1;
+			$rolelist =~ s/^\Q$role//xs;
+			$rolelist =~ s/^\s+//xs;
+		}
+		else {
+			die "expected role name, got $rolelist";
+		}
+		
+		if ($rolelist =~ /^\?/xs) {
+			die 'unexpected question mark' if $kind eq 'class';
+			$suffix = '?';
+			$rolelist =~ s/^\?\s*//xs;
+		}
+		elsif ($rolelist =~ /^((?&PerlList)) $PPR::GRAMMAR/xso) {
+			$role_params = $1;
+			$rolelist =~ s/^\Q$role_params//xs;
+			$rolelist =~ s/^\s+//xs;
+		}
+		
+		if ($role_is_block) {
+			push @return, sprintf('sprintf(q(%s%%s%s), scalar(do %s))', $prefix, $suffix, $role);
+		}
+		else {
+			push @return, B::perlstring("$prefix$role$suffix");
+		}
+		if ($role_params) {
+			push @return, sprintf('[%s]', $role_params);
+		}
+		
+		$rolelist =~ s/^\s+//xs;
+		if (length $rolelist) {
+			$rolelist =~ /^,/ or die "expected comma, got $rolelist";
+			$rolelist =~ s/^\,\s*//;
+		}
+	}
+	
+	return join(",", @return);
+};
+
 sub _handle_factory_keyword {
 	my ($me, $name, $via, $code, $sig) = @_;
 	if ($via) {
@@ -250,7 +337,7 @@ sub _handle_factory_keyword {
 			$code,
 		);
 	}
-	my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+	my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 	my $munged_code = sprintf('sub { my($factory,$class,%s)=(shift,shift,@_); do %s }', $signature_var_list, $code);
 	sprintf(
 		'q[%s]->_factory(%s, { code => %s, named => %d, signature => %s });',
@@ -266,7 +353,7 @@ sub _handle_modifier_keyword {
 	my ($me, $kind, $name, $code, $sig) = @_;
 	
 	if ($sig) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code;
 		if ($kind eq 'around') {
 			$munged_code = sprintf('sub { my($next,$self,%s)=(shift,shift,@_); my $class = ref($self)||$self; do %s }', $signature_var_list, $code);
@@ -345,7 +432,7 @@ sub import {
 	# `class` keyword
 	#
 	keyword class (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => %s; use MooX::Pression::_Gather -unparent;',
@@ -373,7 +460,7 @@ sub import {
 	# `role` keyword
 	#
 	keyword role (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => %s; use MooX::Pression::_Gather -unparent;',
@@ -415,14 +502,14 @@ sub import {
 	
 	# `extends` keyword
 	#
-	keyword extends (Bareword $parent) {
-		sprintf('q[%s]->_extends(%s);', $me, B::perlstring($parent));
+	keyword extends (RoleList $parent) {
+		sprintf('q[%s]->_extends(%s);', $me, $parent->$handle_rolelist('class'));
 	}
 	
 	# `with` keyword
 	#
-	keyword with (/(?&PerlIdentifier)\??(\s*,\s*(?&PerlIdentifier)\??)*/ $roles) {
-		sprintf('q[%s]->_with(%s);', $me, join q[,], map B::perlstring($_), split /\s*,\s*/, $roles);
+	keyword with (RoleList $roles) {
+		sprintf('q[%s]->_with(%s);', $me, $roles->$handle_rolelist('role'));
 	}
 	
 	# `requires` keyword
@@ -465,7 +552,7 @@ sub import {
 	# `method` keyword
 	#
 	keyword method (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); my $class = ref($self)||$self; do %s }', $signature_var_list, $code);
 		sprintf(
 			'q[%s]->_can(%s, { code => %s, named => %d, signature => %s });',
@@ -585,7 +672,7 @@ sub _has {
 }
 sub _extends {
 	shift;
-	$OPTS{extends} = shift;
+	@{ $OPTS{extends}||=[] } = @_;
 }
 sub _type_name {
 	shift;
