@@ -1010,6 +1010,13 @@ Here, "MyApp::Species" isn't a class in the usual sense; you cannot create
 instances of it. It's like a template for generating classes. Then 
 "MyApp::Dog" generates a class from the template and inherits from that.
 
+  my $Cat = MyApp->generate_species('cat', 'Felis catus');
+  my $mog = $Cat->new(name => 'Mog');
+  
+  $mog->isa('MyApp::Animal');         # true
+  $mog->isa('MyApp::Species');        # false!!!
+  $mog->isa($Cat);                    # true
+
 Because there are never any instances of "MyApp::Species", it doesn't
 make sense to have a B<Species> type constraint. Instead there are
 B<SpeciesClass> and B<SpeciesInstance> classes.
