@@ -25,7 +25,7 @@ BEGIN {
 		if ($action eq -gather) {
 			while (@_) {
 				my ($k, $v) = splice @_, 0, 2;
-				if (my ($kind,$pkg) = ($k =~ /^(class|role):(.+)$/)) {
+				if (my ($kind,$pkg) = ($k =~ /^(class|role|class_generator|role_generator):(.+)$/)) {
 					if ( my @stack = @{ $stack{$me}{$caller}||[] } ) {
 						pop @stack if $stack[-1] eq $pkg;
 						if (@stack) {
@@ -43,6 +43,12 @@ BEGIN {
 		elsif ($action eq -go) {
 			if ($gather{$me}{$caller}{'_defer_role'}) {
 				die 'nested roles not currently supported';
+			}
+			if ($gather{$me}{$caller}{'_defer_role_generator'}) {
+				die 'nested role generators not currently supported';
+			}
+			if ($gather{$me}{$caller}{'_defer_class_generator'}) {
+				die 'nested class generators not currently supported';
 			}
 			if ($gather{$me}{$caller}{'_defer_class'}) {
 				$me->_undefer_classes($gather{$me}{$caller}{'class'}, delete $gather{$me}{$caller}{'_defer_class'});
@@ -338,6 +344,16 @@ sub import {
 	
 	# `class` keyword
 	#
+	keyword class (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
+		sprintf(
+			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => %s; use MooX::Pression::_Gather -unparent;',
+			B::perlstring($classname),
+			B::perlstring('class_generator:'.$classname),
+			$munged_code,
+		);
+	}
 	keyword class (Bareword $classname, Block $classdfn) {
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
@@ -356,6 +372,16 @@ sub import {
 	
 	# `role` keyword
 	#
+	keyword role (Bareword $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature->($sig);
+		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
+		sprintf(
+			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => %s; use MooX::Pression::_Gather -unparent;',
+			B::perlstring($classname),
+			B::perlstring('role_generator:'.$classname),
+			$munged_code,
+		);
+	}
 	keyword role (Bareword $classname, Block $classdfn) {
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
@@ -545,7 +571,6 @@ sub authority {
 #
 # CALLBACKS
 #
-our @STACK;
 sub _package_callback {
 	shift;
 	my $cb = shift;
