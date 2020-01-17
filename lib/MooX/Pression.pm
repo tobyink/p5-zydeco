@@ -1063,12 +1063,12 @@ Often it makes more sense to parameterize roles than classes.
     }
     
     role Species ( Str $common_name, Str $binomial ) {
-      extends Animal;
       constant common_name  = $common_name;
       constant binomial     = $binomial;
     }
     
     class Dog {
+      extends Animal;
       with Species('dog', 'Canis familiaris'), GoodBoi?;
       method bark () {
         say "woof!";
