@@ -1575,7 +1575,7 @@ method but another wrapper!)
 
 C<< $next >> and C<< $self >> are both shifted off C<< @_ >>.
 
-If you use the signature-free version then C<< $next >> and C << $self >>
+If you use the signature-free version then C<< $next >> and C<< $self >>
 are not shifted off C<< @_ >> for you, but the variables are still defined.
 
   around marry {
