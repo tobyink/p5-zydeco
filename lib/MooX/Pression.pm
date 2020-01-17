@@ -983,6 +983,50 @@ It is possible to prefix a class name with a plus sign:
 Now the employee class will be named C<MyApp::Person::Employee> instead of
 the usual C<MyApp::Employee>.
 
+=head4 Parameterizable classes
+
+  package MyApp {
+    use MooX::Pression;
+    
+    class Animal {
+      has name;
+    }
+    
+    class Species ( Str $common_name, Str $binomial ) {
+      extends Animal;
+      constant common_name  = $common_name;
+      constant binomial     = $binomial;
+    }
+    
+    class Dog {
+      extends Species('dog', 'Canis familiaris');
+      method bark () {
+        say "woof!";
+      }
+    }
+  }
+
+Here, "MyApp::Species" isn't a class in the usual sense; you cannot create
+instances of it. It's like a template for generating classes. Then 
+"MyApp::Dog" generates a class from the template and inherits from that.
+
+Because there are never any instances of "MyApp::Species", it doesn't
+make sense to have a B<Species> type constraint. Instead there are
+B<SpeciesClass> and B<SpeciesInstance> classes.
+
+  use MyApp::Types -is;
+  
+  my $lassie = MyApp->new_dog;
+  
+  is_Animal( $lassie );               # true
+  is_Dog( $lassie );                  # true
+  is_SpeciesInstance( $lassie );      # true
+  is_SpeciesClass( ref($lassie) );    # true
+
+Subclasses cannot be nested inside parameterizable classes.
+It should theoretically be possible to nest parameterizable classes
+within regular classes, but this isn't implemented yet.
+
 =head3 C<< role >>
 
 Define a very basic role:
@@ -999,6 +1043,31 @@ This is just the same as C<class> but defines a role instead of a class.
 
 Roles cannot be nested within each other, nor can roles be nested in classes,
 nor classes in roles.
+
+=head4 Parameterizable roles
+
+Often it makes more sense to parameterize roles than classes.
+
+  package MyApp {
+    use MooX::Pression;
+    
+    class Animal {
+      has name;
+    }
+    
+    role Species ( Str $common_name, Str $binomial ) {
+      extends Animal;
+      constant common_name  = $common_name;
+      constant binomial     = $binomial;
+    }
+    
+    class Dog {
+      with Species('dog', 'Canis familiaris'), GoodBoi?;
+      method bark () {
+        say "woof!";
+      }
+    }
+  }
 
 =head3 C<< type_name >>
 
