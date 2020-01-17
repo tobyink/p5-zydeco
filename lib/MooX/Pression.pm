@@ -53,9 +53,13 @@ BEGIN {
 			if ($gather{$me}{$caller}{'_defer_class'}) {
 				$me->_undefer_classes($gather{$me}{$caller}{'class'}, delete $gather{$me}{$caller}{'_defer_class'});
 			}
+			
+			if ($gather{$me}{$caller}{debug}) {
+				require Data::Dumper;
+				warn Data::Dumper::Dumper($gather{$me}{$caller});
+			}
+			
 			@_ = ('MooX::Press' => $gather{$me}{$caller});
-			#use Data::Dumper;
-			#warn Dumper \@_;
 			goto \&MooX::Press::import;
 		}
 		elsif ($action eq -parent) {
@@ -431,29 +435,29 @@ sub import {
 	
 	# `class` keyword
 	#
-	keyword class (QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+	keyword class ('+'? $plus, QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($generator,%s)=(shift,@_); q(%s)->_package_callback(sub %s) }', $signature_var_list, $me, $classdfn);
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => %s; use MooX::Pression::_Gather -unparent;',
-			B::perlstring($classname),
-			B::perlstring('class_generator:'.$classname),
+			B::perlstring("$plus$classname"),
+			B::perlstring("class_generator:$plus$classname"),
 			$munged_code,
 		);
 	}
-	keyword class (QualifiedIdentifier $classname, Block $classdfn) {
+	keyword class ('+'? $plus, QualifiedIdentifier $classname, Block $classdfn) {
 		sprintf(
 			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
-			B::perlstring($classname),
-			B::perlstring('class:'.$classname),
+			B::perlstring("$plus$classname"),
+			B::perlstring("class:$plus$classname"),
 			$me,
 			$classdfn,
 		);
 	}
-	keyword class (QualifiedIdentifier $classname, ';') {
+	keyword class ('+'? $plus, QualifiedIdentifier $classname, ';') {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
-			B::perlstring('class:'.$classname),
+			B::perlstring("class:$plus$classname"),
 		);
 	}
 	
@@ -939,6 +943,8 @@ It is possible to create a class without the prefix:
 
 The class name will now be "Person" instead of "MyApp::Person"!
 
+=head4 Nested classes
+
 C<class> blocks can be nested. This establishes an inheritance heirarchy.
 
   class Animal {
@@ -961,6 +967,21 @@ C<class> blocks can be nested. This establishes an inheritance heirarchy.
   my $superman = MyApp->new_superhuman( name => 'Kal El' );
 
 See also C<extends> as an alternative way of declaring inheritance.
+
+It is possible to prefix a class name with a plus sign:
+
+  package MyApp {
+    use MooX::Pression;
+    class Person {
+      has name;
+      class +Employee {
+        has job_title;
+      }
+    }
+  }
+
+Now the employee class will be named C<MyApp::Person::Employee> instead of
+the usual C<MyApp::Employee>.
 
 =head3 C<< role >>
 
