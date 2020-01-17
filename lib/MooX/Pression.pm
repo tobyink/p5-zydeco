@@ -2043,9 +2043,6 @@ MooX::Pression:
 
 =head2 Future Directions
 
-I'd like to consider adding Package::Variant support if that isn't too
-tricky.
-
 Slurpy parameters for methods need to be integrated.
 
 Something like MooX::HandlesVia or Moose native traits would be good.
