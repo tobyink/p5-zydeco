@@ -471,7 +471,7 @@ sub import {
 			$classdfn,
 		);
 	}
-	keyword class ('+'? $plus, QualifiedIdentifier $classname, ';') {
+	keyword class ('+'? $plus, QualifiedIdentifier $classname) {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
 			B::perlstring("class:$plus$classname"),
@@ -501,7 +501,7 @@ sub import {
 			$classdfn,
 		);
 	}
-	keyword role (QualifiedIdentifier $classname, OWS, ';') {
+	keyword role (QualifiedIdentifier $classname) {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
 			B::perlstring('role:'.$classname),
@@ -627,7 +627,7 @@ sub import {
 	keyword factory (Identifier|Block $name, 'via', Identifier $via) {
 		$me->_handle_factory_keyword($name, $via, undef, undef);
 	}
-	keyword factory (Identifier|Block $name, ';') {
+	keyword factory (Identifier|Block $name) {
 		$me->_handle_factory_keyword($name, 'new', undef, undef);
 	}
 	
