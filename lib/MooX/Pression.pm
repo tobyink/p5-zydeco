@@ -252,7 +252,7 @@ my $handle_signature_list = sub {
 };
 
 keytype RoleList is /
-	\+?\s*
+	\s*
 	(
 		(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 	)
@@ -285,12 +285,6 @@ my $handle_role_list = sub {
 		my $role_is_block = 0;
 		my $suffix = '';
 		my $role_params   = undef;
-		
-		if ($rolelist =~ /^\+/xs) {
-			die 'unexpected plus sign' if $kind eq 'role';
-			$prefix = '+';
-			$rolelist =~ s/^\+\s*//xs;
-		}
 		
 		if ($rolelist =~ /^((?&PerlBlock)) $PPR::GRAMMAR/xso) {
 			$role = $1;
