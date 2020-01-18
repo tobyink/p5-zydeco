@@ -54,3 +54,9 @@
 		item "Handle parameters passed to class/role generators properly."^^Bugfix;
 		item "Fix example that showed `extends` within a `role` block."^^Documentation;
 	].
+
+`MooX-Pression 0.008 cpan:TOBYINK`
+	issued  2020-01-18;
+	changeset [
+		item "Require MooX::Press 0.026."^^Packaging;
+	].
