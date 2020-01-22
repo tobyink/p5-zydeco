@@ -1307,6 +1307,30 @@ Checking C<< $bob->status eq 'alvie' >> is prone to typos, but
 C<< $bob->status_is_alvie >> will cause a runtime error because the
 method is not defined.
 
+MooX::Pression also integrates support for L<Sub::HandlesVia> allowing
+you to delegate certain methods to unblessed references and non-reference
+values. For example:
+
+  class Person {
+    has age (
+      type         => 'Int',
+      default      => 0,
+      handles_via  => 'Counter',
+      handles      => {
+        get_older => 'inc',   # increment age
+      },
+    );
+    method birthday () {
+      $self->get_older;
+      if ($self->age < 30) {
+        say "yay!";
+      }
+      else {
+        say "urgh!";
+      }
+    }
+  }
+
 It is possible to add hints to the attribute name as a shortcut for common
 specifications.
 
@@ -1709,6 +1733,29 @@ Now C<< MyApp->new_man >> will call C<< MyApp::Person->new_guy >>.
 C<< factory new_person >> with no C<via> or method body is basically
 like saying C<< via new >>.
 
+=head4 Implementing a singleton
+
+Factories make it pretty easy to implement a singleton.
+
+  class AppConfig {
+    ...;
+    
+    factory get_appconfig () {
+      state $config = $class->new();
+    }
+  }
+
+Now C<< MyApp->get_appconfig >> will always return the same AppConfig object.
+Because any explicit use of the C<factory> keyword in a class definition
+suppresses the automatic creation of a factory method for the class, there
+will be no C<< MyApp->new_appconfig >> method for creating new objects
+of that class.
+
+(People can still manually call C<< MyApp::AppConfig->new >> to get a new
+AppConfig object, but remember MooX::Pression discourages calling constructors
+directly, and encourages you to use the factory package for instantiating
+objects!)
+
 =head3 C<< coerce >>
 
   class Person {
@@ -2064,12 +2111,6 @@ MooX::Pression:
   class Foo {
     constant PI = 3.2;
   }
-
-=head2 Future Directions
-
-Something like MooX::HandlesVia or Moose native traits would be good.
-MooX::HandlesVia doesn't work well for non-reference values though.
-MooX::Enumeration proves that it's possible to do!
 
 =head1 BUGS
 
