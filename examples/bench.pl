@@ -2,18 +2,29 @@
 
 =head1 PURPOSE
 
-Benchmarking script from Moops, applied to MooX::Pression.
+Speed comparison between
+MooseX::Declare,
+Moops+Moo,
+Moops+Moose,
+MooX::Pression+Moo,
+MooX::Pression+Moose.
 
-Currently MooX::Pression is faster than MooseX::Declare, but slower than
-Moops.
+             Rate       MXD Moops_Moo   MXP_Moo       MXP     Moops
+ MXD        101/s        --      -97%      -98%      -98%      -98%
+ Moops_Moo 3257/s     3128%        --      -25%      -30%      -46%
+ MXP_Moo   4349/s     4210%       34%        --       -7%      -28%
+ MXP       4674/s     4532%       43%        7%        --      -22%
+ Moops     6023/s     5869%       85%       39%       29%        --
 
-           Rate   MXD   MXP Moops
-  MXD   100.0/s    --  -97%  -98%
-  MXP    3901/s 3801%    --  -36%
-  Moops  6081/s 5981%   56%    --
+For Moose classes, Moops is the fastest, followed by MooseX::Pression,
+with MooseX::Declare trailing a long was behind.
 
-(This is mostly due to its signature checks not being as efficient as
-Kavorka, but I do have some ideas about how to improve them.)
+For Moo classes, MooX::Pression beats Moops.
+
+With the exception of MooseX::Declare, Moose-based classes are usually
+faster at runtime than Moo-based classes. Compile time isn't measured
+in this benchmark, but it's likely that Moo-based classes will compile
+faster.
 
 =head1 AUTHOR
 
@@ -36,8 +47,6 @@ use Test::More;
 use Test::Fatal;
 use IO::Callback;
 
-# Declare class using Moops and Moose
-#
 {
 	use Moops;
 	class Foo::Moops using Moose {
@@ -46,10 +55,14 @@ use IO::Callback;
 			$self->_set_n( $self->n + $x );
 		}
 	}
+	class Foo::Moops_Moo using Moo {
+		has n => (is => 'ro', writer => '_set_n', isa => Int, default => 0);
+		method add (Int $x) {
+			$self->_set_n( $self->n + $x );
+		}
+	}
 }
 
-# Declare equivalent class using MooseX::Declare
-#
 {
 	use MooseX::Declare;
 	class Foo::MXD {
@@ -60,23 +73,26 @@ use IO::Callback;
 	}
 }
 
-# Declare class using MooX::Pression and Moose
-#
 {
 	use MooX::Pression;
-	class Foo::MXP {
+	class ::Foo::MXP {
 		toolkit Moose;
 		has n (is => rwp, type => Int, default => 0);
-		method add (Int $x) {
+		method add :optimize (Int $x) {
+			$self->_set_n( $self->n + $x );
+		}
+	}
+	class ::Foo::MXP_Moo {
+		toolkit Moo;
+		has n (is => rwp, type => Int, default => 0);
+		method add :optimize (Int $x) {
 			$self->_set_n( $self->n + $x );
 		}
 	}
 }
-
-
 # Test each class works as expected
 #
-for my $class ('Foo::Moops', 'Foo::MXD', 'Foo::MXP') {
+for my $class ('Foo::Moops', 'Foo::Moops_Moo', 'Foo::MXD', 'Foo::MXP', 'Foo::MXP_Moo') {
 	
 	like(
 		exception { $class->new(n => 1.1) },
@@ -113,12 +129,20 @@ cmpthese(-1, {
 		my $sum = 'Foo::Moops'->new(n => 0);
 		$sum->add($_) for 0..100;
 	},
+	Moops_Moo => q{
+		my $sum = 'Foo::Moops_Moo'->new(n => 0);
+		$sum->add($_) for 0..100;
+	},
 	MXD => q{
 		my $sum = 'Foo::MXD'->new(n => 0);
 		$sum->add($_) for 0..100;
 	},
 	MXP => q{
 		my $sum = 'Foo::MXP'->new(n => 0);
+		$sum->add($_) for 0..100;
+	},
+	MXP_Moo => q{
+		my $sum = 'Foo::MXP_Moo'->new(n => 0);
 		$sum->add($_) for 0..100;
 	},
 });
@@ -138,6 +162,8 @@ ok 7 - Class 'Foo::MXP' throws error on incorrect constructor call
 ok 8 - Objects of class 'Foo::MXP' throw error on incorrect method call
 ok 9 - Objects of class 'Foo::MXP' function correctly
 #          Rate   MXD   MXP Moops
-# MXD   100.0/s    --  -97%  -98%
-# MXP    3901/s 3801%    --  -36%
-# Moops  6081/s 5981%   56%    --
+# MXD   100.0/s    --  -98%  -98%
+# MXP    4830/s 4730%    --  -19%
+# Moops  5966/s 5866%   24%    --
+1..9
+

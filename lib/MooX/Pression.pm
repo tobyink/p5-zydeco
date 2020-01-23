@@ -601,24 +601,27 @@ sub import {
 	
 	# `method` keyword
 	#
-	keyword method (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
+	keyword method (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 		sprintf(
-			'q[%s]->_can(%s, { code => %s, named => %d, signature => %s });',
+			'q[%s]->_can(%s, { code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$munged_code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$signature_is_named,
 			$type_params_stuff,
+			!!$optim,
 		);
 	}
-	keyword method (Identifier|Block $name, Block $code) {
+	keyword method (Identifier|Block $name, ':optimize'? $optim, Block $code) {
+		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_can(%s, sub { my $self = $_[0]; my $class = ref($self)||$self; do %s });',
+			'q[%s]->_can(%s, { code => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
+			!!$optim,
 		);
 	}
 	
@@ -1610,6 +1613,19 @@ deal with C<< @_ >> in the body of the method. In the second, there
 is a signature, but it is a signature showing that the method expects
 no arguments (other than the invocant of course).
 
+=head4 Optimizing Methods
+
+For a slight compiled-time penalty, you can improve the speed which
+methods run at using the C<< :optimize >> attribute:
+
+  method foo :optimize (...) {
+    ...;
+  }
+
+Optimized methods must not close over any lexical (C<my> or C<our>)
+variables; they can only access the variables declared in their,
+signature, C<< $self >>, C<< $class >>, C<< @_ >>, and globals.
+
 =head3 require
 
 Indicates that a role requires classes to fulfil certain methods.
@@ -1654,6 +1670,8 @@ not care about the types of the arguments, so can omit checking them.
     say "Speak now or forever hold your peace!";
   }
 
+The C<< :optimize >> attribute is not currently supported for C<before>.
+
 =head3 C<< after >>
 
 There's not much to say about C<after>. It's just like C<before>.
@@ -1669,6 +1687,8 @@ There's not much to say about C<after>. It's just like C<before>.
   after marry ( $partner, $date? ) {
     say "You may kiss the bride!";
   }
+
+The C<< :optimize >> attribute is not currently supported for C<after>.
 
 =head3 C<< around >>
 
@@ -1698,6 +1718,8 @@ are not shifted off C<< @_ >> for you, but the variables are still defined.
     say "You may kiss the bride!";
     return $return;
   }
+
+The C<< :optimize >> attribute is not currently supported for C<around>.
 
 =head3 C<< factory >>
 
@@ -1799,6 +1821,8 @@ Now C<< MyApp->new_man >> will call C<< MyApp::Person->new_guy >>.
 C<< factory new_person >> with no C<via> or method body is basically
 like saying C<< via new >>.
 
+The C<< :optimize >> attribute is not currently supported for C<factory>.
+
 =head4 Implementing a singleton
 
 Factories make it pretty easy to implement a singleton.
@@ -1879,6 +1903,8 @@ statement more readable.
   coerce Str via from_string {      # this works
     $class->new(name => $_);
   }
+
+The C<< :optimize >> attribute is not currently supported for C<coerce>.
 
 =head3 C<< version >>
 
