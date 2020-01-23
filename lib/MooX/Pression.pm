@@ -502,6 +502,30 @@ sub import {
 		);
 	}
 	
+	# `toolkit` keyword
+	#
+	keyword toolkit (Identifier $tk, '(', QualifiedIdentifier|Comma @imports, ')') {
+		my @processed_imports;
+		while (@imports) {
+			no warnings 'uninitialized';
+			my $next = shift @imports;
+			if ($next =~ /^::(.+)$/) {
+				push @processed_imports, $1;
+			}
+			elsif ($next =~ /^[^\W0-9]/) {
+				push @processed_imports, sprintf('%sX::%s', $tk, $next);
+			}
+			else {
+				die "Expected package name, got $next";
+			}
+			$imports[0] eq ',' and shift @imports;
+		}
+		sprintf('q[%s]->_toolkit(%s);', $me, join ",", map(B::perlstring($_), $tk, @processed_imports));
+	}
+	keyword toolkit (Identifier $tk) {
+		sprintf('q[%s]->_toolkit(%s);', $me, B::perlstring($tk));
+	}
+	
 	# `begin` and `end` keywords
 	#
 	keyword begin (Block $code) {
@@ -706,6 +730,12 @@ sub _end {
 sub _with {
 	shift;
 	push @{ $OPTS{with}||=[] }, @_;
+}
+sub _toolkit {
+	shift;
+	my ($toolkit, @imports) = @_;
+	$OPTS{toolkit} = $toolkit;
+	push @{ $OPTS{import}||=[] }, @imports if @imports;
 }
 sub _requires {
 	shift;
@@ -1089,14 +1119,29 @@ Often it makes more sense to parameterize roles than classes.
     }
   }
 
-=head3 C<< type_name >>
+=head2 C<< toolkit >>
 
-  class Homo::Sapiens {
-    type_name Human;
+Use a different toolkit instead of Moo.
+
+  # use Mouse
+  class Foo {
+    toolkit Mouse;
+  }
+  
+  # use Moose
+  # use MooseX::Aliases
+  # use MooseX::StrictConstructor
+  class Bar {
+    toolkit Moose ( Aliases, StrictConstructor );
   }
 
-The class will still be called L<MyApp::Homo::Sapiens> but the type in the
-type library will be called B<Human> instead of B<Homo_Sapiens>.
+You can of course specify you want to use Moo:
+
+  class Baz {
+    toolkit Moo;
+  }
+
+Not all MooseX/MouseX/MooX packages will work, but *X::StrictConstructor will.
 
 =head3 C<< extends >>
 
@@ -1755,6 +1800,15 @@ of that class.
 AppConfig object, but remember MooX::Pression discourages calling constructors
 directly, and encourages you to use the factory package for instantiating
 objects!)
+
+=head3 C<< type_name >>
+
+  class Homo::Sapiens {
+    type_name Human;
+  }
+
+The class will still be called L<MyApp::Homo::Sapiens> but the type in the
+type library will be called B<Human> instead of B<Homo_Sapiens>.
 
 =head3 C<< coerce >>
 
