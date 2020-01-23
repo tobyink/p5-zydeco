@@ -1119,7 +1119,7 @@ Often it makes more sense to parameterize roles than classes.
     }
   }
 
-=head2 C<< toolkit >>
+=head3 C<< toolkit >>
 
 Use a different toolkit instead of Moo.
 
@@ -1142,6 +1142,18 @@ You can of course specify you want to use Moo:
   }
 
 Not all MooseX/MouseX/MooX packages will work, but *X::StrictConstructor will.
+
+It is possible to set a default toolkit when you import MooX::Pression.
+
+  use MooX::Pression (
+    ...,
+    toolkit => 'Moose',
+  );
+
+  use MooX::Pression (
+    ...,
+    toolkit => 'Mouse',
+  );
 
 =head3 C<< extends >>
 
@@ -1328,7 +1340,7 @@ For enumerations, you can define them like this:
   }
 
 MooX::Pression integrates support for L<MooX::Enumeration> (and
-L<MooseX::Enumeration>).
+L<MooseX::Enumeration>, but MouseX::Enumeration doesn't exist).
 
   class Person {
     ...;
@@ -1922,24 +1934,6 @@ cool. (This might be replaced with another C<try> module in the future?)
 And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
 L<Types::Common::String>, and L<Types::Common::Numeric>.
-
-=head2 MooseX::Pression or MouseX::Pression?
-
-  use MooX::Pression (
-    ...,
-    toolkit => 'Moose',
-  );
-
-  use MooX::Pression (
-    ...,
-    toolkit => 'Mouse',
-  );
-
-The ability to choose a toolkit on a package-by-package basis is not
-currently supported. (Though it's implemented in MooX::Press.)
-
-The C<< handles => 1 >> and C<< handles => 2 >> features for enum
-attributes are not supported with Mouse.
 
 =head2 MooX::Pression vs Moops
 
