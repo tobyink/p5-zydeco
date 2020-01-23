@@ -6,6 +6,7 @@ use Carp ();
 use Import::Into ();
 use MooX::Press 0.025 ();
 use MooX::Press::Keywords ();
+use Syntax::Keyword::Try ();
 
 package MooX::Pression;
 
@@ -438,7 +439,9 @@ sub import {
 	# Export utility stuff
 	#
 	MooX::Pression::_Gather->import::into($caller, -gather => %opts);
-	MooX::Press::Keywords->import::into($caller, qw( -booleans -privacy -util -try ));
+	MooX::Press::Keywords->import::into($caller, qw( -booleans -privacy -util ));
+	Syntax::Keyword::Try->import::into($caller);
+	
 	$_->import::into($caller, qw( -types -is -assert ))
 		for qw(Types::Standard Types::Common::Numeric Types::Common::String);
 	
@@ -1928,8 +1931,7 @@ of C<confess> is super-powered and runs its arguments through C<sprintf>.
     }
   }
 
-And MooX::Pression exports everything from L<Try::Tiny> because it's
-cool. (This might be replaced with another C<try> module in the future?)
+And MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
 
 And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
