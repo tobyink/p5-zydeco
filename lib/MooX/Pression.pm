@@ -7,6 +7,7 @@ use Import::Into ();
 use MooX::Press 0.025 ();
 use MooX::Press::Keywords ();
 use Syntax::Keyword::Try ();
+use feature ();
 
 package MooX::Pression;
 
@@ -439,9 +440,14 @@ sub import {
 	# Export utility stuff
 	#
 	MooX::Pression::_Gather->import::into($caller, -gather => %opts);
-	MooX::Press::Keywords->import::into($caller, qw( -booleans -privacy -util ));
+	MooX::Press::Keywords->import::into($caller, qw( -booleans -privacy -util )); # imports strict and warnings
 	Syntax::Keyword::Try->import::into($caller);
-	
+	if ($] >= 5.018) {
+		feature->import::into($caller, qw( say state unicode_strings unicode_eval evalbytes current_sub fc ));
+	}
+	elsif ($] >= 5.014) {
+		feature->import::into($caller, qw( say state unicode_strings ));
+	}
 	$_->import::into($caller, qw( -types -is -assert ))
 		for qw(Types::Standard Types::Common::Numeric Types::Common::String);
 	
@@ -1929,6 +1935,30 @@ of C<confess> is super-powered and runs its arguments through C<sprintf>.
     if ($self->age < 18) {
       confess("Can't vote, only %d", $self->age);
     }
+  }
+
+MooX::Pression turns on strict, warnings, and the following modern Perl
+features:
+
+  # Perl 5.14 and Perl 5.16
+  say state unicode_strings
+  
+  # Perl 5.18 or above
+  say state unicode_strings unicode_eval evalbytes current_sub fc
+
+If you're wondering why not other features, it's because I didn't want to
+enable any that are currently classed as experimental, nor any that require
+a version of Perl above 5.18. The C<switch> feature is mostly seen as a
+failed experiment these days, and C<lexical_subs> cannot be called as methods
+so are less useful in object-oriented code.
+
+You can, of course, turn on extra features yourself.
+
+  package MyApp {
+    use MooX::Pression;
+    use feature qw( lexical_subs postderef );
+    
+    ...;
   }
 
 And MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
