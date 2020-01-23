@@ -1,0 +1,38 @@
+language: perl
+matrix:
+  include:
+    - perl: "5.30"
+    - perl: "5.28"
+    - perl: "5.26"
+      dist: trusty
+    - perl: "5.24"
+      dist: trusty
+    - perl: "5.22"
+      dist: trusty
+    - perl: "5.20"
+      dist: trusty
+    - perl: "5.18"
+      dist: trusty
+    - perl: "5.16"
+      dist: trusty
+    - perl: "5.14"
+      dist: trusty
+    - perl: "blead"
+  allow_failures:
+    - perl: "blead"
+    - perl: "5.16"
+    - perl: "5.14"
+before_install:
+  - export DIST_INKT_PROFILE="Dist::Inkt::Profile::TOBYINK"
+  - eval $(curl https://travis-perl.github.io/init) --auto
+install:
+  - cpan-install --toolchain
+  - cpan-install --deps
+  - cpan-install --coverage
+  - cpan-install "Moose" "MooseX::Enumeration" "Mouse" "MooX::TypeTiny" "MooseX::XSAccessor"
+before_script:
+  - coverage-setup
+script:
+  - prove -r -Ilib -Iinc $(test-dirs)
+after_success:
+  - coverage-report -select_re '^lib/'
