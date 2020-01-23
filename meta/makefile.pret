@@ -14,6 +14,8 @@
 	:runtime-recommendation [ :on "MooX::TypeTiny"^^:CpanId ];
 	:runtime-recommendation [ :on "Class::XSAccessor"^^:CpanId ];
 	:test-requirement       [ :on "Test::More 0.96"^^:CpanId ];
+	:test-requirement       [ :on "Test::Fatal"^^:CpanId ];
+	:test-requirement       [ :on "Test::Requires"^^:CpanId ];
 	:develop-recommendation [ :on "Dist::Inkt 0.001"^^:CpanId ];
 	.
 
