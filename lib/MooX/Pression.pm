@@ -11,7 +11,7 @@ use Syntax::Keyword::Try ();
 package MooX::Pression;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.008';
+our $VERSION   = '0.009';
 
 use Keyword::Declare;
 use B::Hooks::EndOfScope;

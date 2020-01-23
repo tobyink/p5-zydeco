@@ -60,3 +60,13 @@
 	changeset [
 		item "Require MooX::Press 0.026."^^Packaging;
 	].
+
+`MooX-Pression 0.009 cpan:TOBYINK`
+	issued  2020-01-23;
+	changeset [
+		item "Require MooX::Press 0.030."^^Packaging;
+		item "Tightened up grammar for parsing."^^Change;
+		item "Document how to achieve the singleton pattern."^^Documentation;
+		item "Document Sub::HandlesVia support."^^Documentation;
+		item "Add a `toolkit` keyword."^^Addition;
+	].
