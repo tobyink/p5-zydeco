@@ -371,7 +371,7 @@ sub _handle_method_keyword {
 	my $me = shift;
 	my ($name, $code, $sig, $optim) = @_;
 	
-		if (defined $name) {	
+	if (defined $name) {
 		if ($sig) {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
