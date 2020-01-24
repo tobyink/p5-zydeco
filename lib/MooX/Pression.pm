@@ -368,7 +368,7 @@ sub _handle_factory_keyword {
 }
 
 sub _handle_modifier_keyword {
-	my ($me, $kind, $name, $code, $sig) = @_;
+	my ($me, $kind, $name, $code, $sig, $optim) = @_;
 	
 	if ($sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
@@ -380,31 +380,36 @@ sub _handle_modifier_keyword {
 			$munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 		}
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { code => %s, named => %d, signature => %s });',
+			'q[%s]->_modifier(q(%s), %s, { code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$munged_code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$signature_is_named,
 			$type_params_stuff,
+			!!$optim,
 		);
 	}
 	elsif ($kind eq 'around') {
+		my $munged_code = sprintf('sub { my ($next, $self) = @_; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, sub { my ($next, $self) = @_; my $class = ref($self)||$self; do %s });',
+			'q[%s]->_modifier(q(%s), %s, { code => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
+			!!$optim,
 		);
 	}
 	else {
+		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, sub { my $self = $_[0]; my $class = ref($self)||$self; do %s });',
+			'q[%s]->_modifier(q(%s), %s, { code => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
+			!!$optim,
 		);
 	}
 }
@@ -630,23 +635,23 @@ sub import {
 	
 	# `before`, `after`, and `around` keywords
 	#
-	keyword before (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(before => $name, $code, $sig);
+	keyword before (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(before => $name, $code, $sig, !!$optim);
 	}
-	keyword before (Identifier|Block $name, Block $code) {
-		$me->_handle_modifier_keyword(before => $name, $code);
+	keyword before (Identifier|Block $name, ':optimize'? $optim, Block $code) {
+		$me->_handle_modifier_keyword(before => $name, $code, undef, !!$optim);
 	}
-	keyword after (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(after => $name, $code, $sig);
+	keyword after (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(after => $name, $code, $sig, !!$optim);
 	}
-	keyword after (Identifier|Block $name, Block $code) {
-		$me->_handle_modifier_keyword(after => $name, $code);
+	keyword after (Identifier|Block $name, ':optimize'? $optim, Block $code) {
+		$me->_handle_modifier_keyword(after => $name, $code, undef, !!$optim);
 	}
-	keyword around (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(around => $name, $code, $sig);
+	keyword around (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(around => $name, $code, $sig, !!$optim);
 	}
-	keyword around (Identifier|Block $name, Block $code) {
-		$me->_handle_modifier_keyword(around => $name, $code);
+	keyword around (Identifier|Block $name, ':optimize'? $optim, Block $code) {
+		$me->_handle_modifier_keyword(around => $name, $code, undef, !!$optim);
 	}
 	
 	# `factory` keyword
@@ -1673,7 +1678,7 @@ not care about the types of the arguments, so can omit checking them.
     say "Speak now or forever hold your peace!";
   }
 
-The C<< :optimize >> attribute is not currently supported for C<before>.
+The C<< :optimize >> attribute is supported for C<before>.
 
 =head3 C<< after >>
 
@@ -1691,7 +1696,7 @@ There's not much to say about C<after>. It's just like C<before>.
     say "You may kiss the bride!";
   }
 
-The C<< :optimize >> attribute is not currently supported for C<after>.
+The C<< :optimize >> attribute is supported for C<after>.
 
 =head3 C<< around >>
 
@@ -1722,7 +1727,7 @@ are not shifted off C<< @_ >> for you, but the variables are still defined.
     return $return;
   }
 
-The C<< :optimize >> attribute is not currently supported for C<around>.
+The C<< :optimize >> attribute is supported for C<around>.
 
 =head3 C<< factory >>
 
