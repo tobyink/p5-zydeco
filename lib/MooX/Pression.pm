@@ -475,19 +475,21 @@ sub _handle_modifier_keyword {
 
 sub import {
 	no warnings 'closure';
-	my $caller = caller;
 	my ($me, %opts) = (shift, @_);
+	my $caller = ($opts{caller} ||= caller);
+	
+	# Need to reproduce this logic from MooX::Press to find out
+	# the name of the type library.
+	#
+	require MooX::Press;
+	$opts{prefix}           = $opts{caller} unless exists $opts{prefix};
+	$opts{factory_package}  = $opts{prefix} unless exists $opts{factory_package};
+	$opts{type_library}     = 'Types'       unless exists $opts{type_library};
+	$opts{type_library}     = 'MooX::Press'->qualify_name($opts{type_library}, $opts{prefix});
 	
 	# Optionally export wrapper subs for pre-declared types
 	#
 	if ($opts{declare}) {
-		require MooX::Press;
-		# Need to reproduce this logic from MooX::Press to find out
-		# the name of the type library.
-		$opts{caller}  ||= $caller;
-		$opts{prefix}       = $opts{caller} unless exists $opts{prefix};
-		$opts{type_library} = 'Types'       unless exists $opts{type_library};
-		$opts{type_library} = 'MooX::Press'->qualify_name($opts{type_library}, $opts{prefix});
 		my $types = $opts{type_library};
 		for my $name (@{ $opts{declare} }) {
 			eval qq{
@@ -542,6 +544,33 @@ sub import {
 			B::perlstring("class:$plus$classname"),
 		);
 	}
+	keyword class ('(', SignatureList $sig, ')', Block $classdfn) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
+		sprintf(
+			'q[%s]->anonymous_generator(class => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$munged_code,
+			!!$signature_is_named,
+			$type_params_stuff,
+			B::perlstring($opts{toolkit}||'Moo'),
+			B::perlstring($opts{prefix}),
+			B::perlstring($opts{factory_package}),
+			B::perlstring($opts{type_library}),
+		);
+	}
+	keyword class (Block? $classdfn) {
+		$classdfn ||= '{}';
+		sprintf(
+			'q[%s]->anonymous_package(class => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$classdfn,
+			B::perlstring($opts{toolkit}||'Moo'),
+			B::perlstring($opts{prefix}),
+			B::perlstring($opts{factory_package}),
+			B::perlstring($opts{type_library}),
+		);
+	}
 	
 	# `role` keyword
 	#
@@ -570,6 +599,33 @@ sub import {
 		sprintf(
 			'use MooX::Pression::_Gather -gather, %s => {};',
 			B::perlstring('role:'.$classname),
+		);
+	}
+	keyword role ('(', SignatureList $sig, ')', Block $classdfn) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
+		sprintf(
+			'q[%s]->anonymous_generator(role => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$munged_code,
+			!!$signature_is_named,
+			$type_params_stuff,
+			B::perlstring($opts{toolkit}||'Moo'),
+			B::perlstring($opts{prefix}),
+			B::perlstring($opts{factory_package}),
+			B::perlstring($opts{type_library}),
+		);
+	}
+	keyword role (Block? $classdfn) {
+		$classdfn ||= '{}';
+		sprintf(
+			'q[%s]->anonymous_package(role => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$classdfn,
+			B::perlstring($opts{toolkit}||'Moo'),
+			B::perlstring($opts{prefix}),
+			B::perlstring($opts{factory_package}),
+			B::perlstring($opts{type_library}),
 		);
 	}
 	
@@ -827,6 +883,43 @@ sub _modifier {
 	shift;
 	my ($kind, $name, $value) = @_;
 	push @{ $OPTS{$kind} ||= [] }, $name, $value;
+}
+
+my $i = 0;
+sub anonymous_package {
+	my $me = shift;
+	my ($kind, $callback, %opts) = @_;
+	my $package_dfn = $me->_package_callback($callback);
+	
+	for my $forbidden (qw/ factory type_name coerce /) {
+		die if exists $package_dfn->{$forbidden};
+	}
+	$package_dfn->{type_name}  = undef;
+	$package_dfn->{factory}    = undef;
+	
+	my $qname = sprintf('%s::__ANON_%06d__', __PACKAGE__, ++$i);
+	
+	require MooX::Press;
+	my $method = "make_$kind";
+	MooX::Press->$method("::$qname", %opts, %$package_dfn);
+	
+	require Module::Runtime;
+	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
+	$qname;
+}
+
+sub anonymous_generator {
+	my $me = shift;
+	my ($kind, $callback, %opts) = @_;
+	my $qname = sprintf('%s::__ANON_%06d__', __PACKAGE__, ++$i);
+	
+	require MooX::Press;
+	my $method = "make_$kind\_generator";
+	MooX::Press->$method("::$qname", %opts, generator => $callback);
+	
+	require Module::Runtime;
+	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
+	$qname;
 }
 
 1;
@@ -1090,57 +1183,6 @@ It is possible to prefix a class name with a plus sign:
 Now the employee class will be named C<MyApp::Person::Employee> instead of
 the usual C<MyApp::Employee>.
 
-=head4 Parameterizable classes
-
-  package MyApp {
-    use MooX::Pression;
-    
-    class Animal {
-      has name;
-    }
-    
-    class Species ( Str $common_name, Str $binomial ) {
-      extends Animal;
-      constant common_name  = $common_name;
-      constant binomial     = $binomial;
-    }
-    
-    class Dog {
-      extends Species('dog', 'Canis familiaris');
-      method bark () {
-        say "woof!";
-      }
-    }
-  }
-
-Here, "MyApp::Species" isn't a class in the usual sense; you cannot create
-instances of it. It's like a template for generating classes. Then 
-"MyApp::Dog" generates a class from the template and inherits from that.
-
-  my $Cat = MyApp->generate_species('cat', 'Felis catus');
-  my $mog = $Cat->new(name => 'Mog');
-  
-  $mog->isa('MyApp::Animal');         # true
-  $mog->isa('MyApp::Species');        # false!!!
-  $mog->isa($Cat);                    # true
-
-Because there are never any instances of "MyApp::Species", it doesn't
-make sense to have a B<Species> type constraint. Instead there are
-B<SpeciesClass> and B<SpeciesInstance> type constraints.
-
-  use MyApp::Types -is;
-  
-  my $lassie = MyApp->new_dog;
-  
-  is_Animal( $lassie );               # true
-  is_Dog( $lassie );                  # true
-  is_SpeciesInstance( $lassie );      # true
-  is_SpeciesClass( ref($lassie) );    # true
-
-Subclasses cannot be nested inside parameterizable classes.
-It should theoretically be possible to nest parameterizable classes
-within regular classes, but this isn't implemented yet.
-
 =head3 C<< role >>
 
 Define a very basic role:
@@ -1157,31 +1199,6 @@ This is just the same as C<class> but defines a role instead of a class.
 
 Roles cannot be nested within each other, nor can roles be nested in classes,
 nor classes in roles.
-
-=head4 Parameterizable roles
-
-Often it makes more sense to parameterize roles than classes.
-
-  package MyApp {
-    use MooX::Pression;
-    
-    class Animal {
-      has name;
-    }
-    
-    role Species ( Str $common_name, Str $binomial ) {
-      constant common_name  = $common_name;
-      constant binomial     = $binomial;
-    }
-    
-    class Dog {
-      extends Animal;
-      with Species('dog', 'Canis familiaris'), GoodBoi?;
-      method bark () {
-        say "woof!";
-      }
-    }
-  }
 
 =head3 C<< toolkit >>
 
@@ -2084,6 +2101,138 @@ And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
 L<Types::Common::String>, and L<Types::Common::Numeric>.
 
+=head2 Anonymous Classes and Roles
+
+=head3 Anonymous classes
+
+It is possible to make anonymous classes:
+
+  my $class  = do { class; };
+  my $object = $class->new;
+
+The C<< do { ... } >> block is necessary because of a limitation in
+L<Keyword::Declare> and L<Keyword::Simple>, where any keywords they
+define must be complete statements.
+
+Anonymous classes can have methods and attributes and so on:
+
+  my $class = do { class {
+    has foo (type => Int);
+    has bar (type => Int);
+  }};
+  
+  my $object = $class->new(foo => 1, bar => 2);
+
+Anonymous classes I<do not> implicitly inherit from their parent like
+named nested classes do. Named classes nested inside anonymous classes
+I<do not> implicitly inherit from the anonymous class.
+
+Having one anonymous class inherit from another can be done though:
+
+  my $base     = do { class; }
+  my $derived  = do { class {
+    extends {"::$k1"};
+  }};
+
+This works because C<extends> accepts a block which returns a string for
+the package name, and the string needs to begin with "::" to avoid the
+auto prefix mechanism.
+
+=head3 Anonymous roles
+
+Anonymous roles work in much the same way.
+
+=head2 Parameterizable Classes and Roles
+
+=head3 Parameterizable classes
+
+  package MyApp {
+    use MooX::Pression;
+    
+    class Animal {
+      has name;
+    }
+    
+    class Species ( Str $common_name, Str $binomial ) {
+      extends Animal;
+      constant common_name  = $common_name;
+      constant binomial     = $binomial;
+    }
+    
+    class Dog {
+      extends Species('dog', 'Canis familiaris');
+      method bark () {
+        say "woof!";
+      }
+    }
+  }
+
+Here, "MyApp::Species" isn't a class in the usual sense; you cannot create
+instances of it. It's like a template for generating classes. Then 
+"MyApp::Dog" generates a class from the template and inherits from that.
+
+  my $Cat = MyApp->generate_species('cat', 'Felis catus');
+  my $mog = $Cat->new(name => 'Mog');
+  
+  $mog->isa('MyApp::Animal');         # true
+  $mog->isa('MyApp::Species');        # false!!!
+  $mog->isa($Cat);                    # true
+
+Because there are never any instances of "MyApp::Species", it doesn't
+make sense to have a B<Species> type constraint. Instead there are
+B<SpeciesClass> and B<SpeciesInstance> type constraints.
+
+  use MyApp::Types -is;
+  
+  my $lassie = MyApp->new_dog;
+  
+  is_Animal( $lassie );               # true
+  is_Dog( $lassie );                  # true
+  is_SpeciesInstance( $lassie );      # true
+  is_SpeciesClass( ref($lassie) );    # true
+
+Subclasses cannot be nested inside parameterizable classes.
+It should theoretically be possible to nest parameterizable classes
+within regular classes, but this isn't implemented yet.
+
+Anonymous parameterizable classes are possible:
+
+  my $generator = do { class ($footype, $bartype) {
+    has foo (type => $footype);
+    has bar (type => $bartype);
+  };
+  
+  my $class = $generator->generate_package(Int, Num);
+  
+  my $object = $class->new(foo => 42, bar => 4.2);
+
+=head3 Parameterizable roles
+
+Often it makes more sense to parameterize roles than classes.
+
+  package MyApp {
+    use MooX::Pression;
+    
+    class Animal {
+      has name;
+    }
+    
+    role Species ( Str $common_name, Str $binomial ) {
+      constant common_name  = $common_name;
+      constant binomial     = $binomial;
+    }
+    
+    class Dog {
+      extends Animal;
+      with Species('dog', 'Canis familiaris'), GoodBoi?;
+      method bark () {
+        say "woof!";
+      }
+    }
+  }
+
+Anonymous parameterizable roles are possible.
+
 =head2 MooX::Pression vs Moops
 
 MooX::Pression has fewer dependencies than Moops, and crucially doesn't
@@ -2091,6 +2240,8 @@ rely on L<Package::Keyword> and L<Devel::CallParser> which have... issues.
 MooX::Pression uses Damian Conway's excellent L<Keyword::Declare>
 (which in turn uses L<PPR>) to handle most parsing needs, so parsing should
 be more predictable.
+
+Moops is faster though.
 
 Here are a few key syntax and feature differences.
 
@@ -2308,6 +2459,11 @@ MooX::Pression:
   class Foo {
     constant PI = 3.2;
   }
+
+=head3 Parameterizable classes and roles
+
+These were always on my todo list for Moops; I doubt they'll ever be done.
+They work nicely in MooX::Pression though.
 
 =head1 BUGS
 
