@@ -885,6 +885,65 @@ sub _modifier {
 	push @{ $OPTS{$kind} ||= [] }, $name, $value;
 }
 
+#{
+#	package MooX::Pression::Anonymous::Package;
+#	our $AUTHORITY = 'cpan:TOBYINK';
+#	our $VERSION   = '0.009';
+#	use overload q[""] => sub { ${$_[0]} }, fallback => 1;
+#	sub DESTROY {}
+#	sub AUTOLOAD {
+#		my $me = shift;
+#		(my $method = our $AUTOLOAD) =~ s/.*:://;
+#		$$me->$method(@_);
+#	}
+#	
+#	package MooX::Pression::Anonymous::Class;
+#	our $AUTHORITY = 'cpan:TOBYINK';
+#	our $VERSION   = '0.009';
+#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	sub new {
+#		my $me = shift;
+#		$$me->new(@_);
+#	}
+#	use overload q[&{}] => sub {
+#		my $me = shift;
+#		sub { $me->new(@_) }
+#	};
+#	
+#	package MooX::Pression::Anonymous::Role;
+#	our $AUTHORITY = 'cpan:TOBYINK';
+#	our $VERSION   = '0.009';
+#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	
+#	package MooX::Pression::Anonymous::ParameterizableClass;
+#	our $AUTHORITY = 'cpan:TOBYINK';
+#	our $VERSION   = '0.009';
+#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	sub generate_package {
+#		my $me  = shift;
+#		my $gen = $$me->generate_package(@_);
+#		bless \$gen, 'MooX::Pression::Anonymous::Class';
+#	}
+#	use overload q[&{}] => sub {
+#		my $me = shift;
+#		sub { $me->new_class(@_) }
+#	};
+#
+#	package MooX::Pression::Anonymous::ParameterizableRole;
+#	our $AUTHORITY = 'cpan:TOBYINK';
+#	our $VERSION   = '0.009';
+#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	sub generate_package {
+#		my $me  = shift;
+#		my $gen = $$me->generate_package(@_);
+#		bless \$gen, 'MooX::Pression::Anonymous::Class';
+#	}
+#	use overload q[&{}] => sub {
+#		my $me = shift;
+#		sub { $me->new_role(@_) }
+#	};
+#}
+
 my $i = 0;
 sub anonymous_package {
 	my $me = shift;
@@ -905,7 +964,8 @@ sub anonymous_package {
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
-	$qname;
+	#return bless(\$qname, "MooX::Pression::Anonymous::".ucfirst($kind));
+	return $qname;
 }
 
 sub anonymous_generator {
@@ -919,7 +979,8 @@ sub anonymous_generator {
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
-	$qname;
+	#return bless(\$qname, "MooX::Pression::Anonymous::Parameterizable".ucfirst($kind));
+	return $qname;
 }
 
 1;
