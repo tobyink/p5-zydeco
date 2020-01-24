@@ -347,7 +347,7 @@ sub _handle_factory_keyword {
 	if (!$sig) {
 		my $munged_code = sprintf('sub { my ($factory, $class) = (@_); do %s }', $code);
 		return sprintf(
-			'q[%s]->_factory(%s, { code => %s, optimize => %d });',
+			'q[%s]->_factory(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
 			$optim ? B::perlstring($munged_code) : $munged_code,
@@ -357,7 +357,7 @@ sub _handle_factory_keyword {
 	my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 	my $munged_code = sprintf('sub { my($factory,$class,%s)=(shift,shift,@_); %s; do %s }', $signature_var_list, $extra, $code);
 	sprintf(
-		'q[%s]->_factory(%s, { code => %s, named => %d, signature => %s, optimize => %d });',
+		'q[%s]->_factory(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 		$me,
 		($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
 		$optim ? B::perlstring($munged_code) : $munged_code,
@@ -365,6 +365,60 @@ sub _handle_factory_keyword {
 		$type_params_stuff,
 		!!$optim,
 	);
+}
+
+sub _handle_method_keyword {
+	my $me = shift;
+	my ($name, $code, $sig, $optim) = @_;
+	
+		if (defined $name) {	
+		if ($sig) {
+			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			return sprintf(
+				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+				$me,
+				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+				$optim ? B::perlstring($munged_code) : $munged_code,
+				!!$signature_is_named,
+				$type_params_stuff,
+				!!$optim,
+			);
+		}
+		else {
+			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+			return sprintf(
+				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
+				$me,
+				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+				$optim ? B::perlstring($munged_code) : $munged_code,
+				!!$optim,
+			);
+		}
+	}
+	else {
+		if ($sig) {
+			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			return sprintf(
+				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+				'MooX::Press',
+				$optim ? B::perlstring($munged_code) : $munged_code,
+				!!$signature_is_named,
+				$type_params_stuff,
+				!!$optim,
+			);
+		}
+		else {
+			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+			return sprintf(
+				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, optimize => %d });',
+				'MooX::Press',
+				$optim ? B::perlstring($munged_code) : $munged_code,
+				!!$optim,
+			);
+		}
+	}
 }
 
 sub _handle_modifier_keyword {
@@ -380,7 +434,7 @@ sub _handle_modifier_keyword {
 			$munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 		}
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { code => %s, named => %d, signature => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
@@ -393,7 +447,7 @@ sub _handle_modifier_keyword {
 	elsif ($kind eq 'around') {
 		my $munged_code = sprintf('sub { my ($next, $self) = @_; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { code => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
@@ -404,7 +458,7 @@ sub _handle_modifier_keyword {
 	else {
 		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { code => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
@@ -603,6 +657,7 @@ sub import {
 	}
 	
 	# `constant` keyword
+	#
 	keyword constant (Identifier $name, '=', Expr $value) {
 		sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $value);
 	}
@@ -610,27 +665,16 @@ sub import {
 	# `method` keyword
 	#
 	keyword method (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
-		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
-		sprintf(
-			'q[%s]->_can(%s, { code => %s, named => %d, signature => %s, optimize => %d });',
-			$me,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$optim ? B::perlstring($munged_code) : $munged_code,
-			!!$signature_is_named,
-			$type_params_stuff,
-			!!$optim,
-		);
+		$me->_handle_method_keyword($name, $code, $sig, !!$optim);
 	}
 	keyword method (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
-		sprintf(
-			'q[%s]->_can(%s, { code => %s, optimize => %d });',
-			$me,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$optim ? B::perlstring($munged_code) : $munged_code,
-			!!$optim,
-		);
+		$me->_handle_method_keyword($name, $code, undef, !!$optim);
+	}
+	keyword method (                        ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
+		$me->_handle_method_keyword(undef, $code, $sig, !!$optim);
+	}
+	keyword method (                        ':optimize'? $optim, Block $code) {
+		$me->_handle_method_keyword(undef, $code, undef, !!$optim);
 	}
 	
 	# `before`, `after`, and `around` keywords
@@ -1633,6 +1677,45 @@ methods run at using the C<< :optimize >> attribute:
 Optimized methods must not close over any lexical (C<my> or C<our>)
 variables; they can only access the variables declared in their,
 signature, C<< $self >>, C<< $class >>, C<< @_ >>, and globals.
+
+=head4 Anonymous Methods
+
+It I<is> possible to use C<method> without a name to return an
+anonymous method (coderef):
+
+  use MooX::Pression prefix => 'MyApp';
+  
+  class MyClass {
+    method get_method ($foo) {
+      method ($bar) {
+        return $foo . $bar;
+      }
+    }
+  }
+  
+  my $obj   = MyApp->new_myclass;
+  my $anon  = $obj->get_method("FOO");
+  say ref($anon);                       # CODE
+  say $obj->$anon("BAR");               # FOOBAR
+
+Note that while C<< $anon >> is a coderef, it is still a method, and
+still expects to be passed an object as C<< $self >>.
+
+Due to limitations with L<Keyword::Declare> and L<Keyword::Simple>,
+keywords are always complete statements, so C<< method ... >> has an
+implicit semicolon before and after it. This means that this won't
+work:
+
+  my $x = method { ... };
+
+Because it gets treated as:
+
+  my $x = ;
+  method { ... };
+
+A workaround is to wrap it in a C<< do { ... } >> block.
+
+  my $x = do { method { ... } };
 
 =head3 require
 
