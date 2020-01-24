@@ -70,3 +70,16 @@
 		item "Document Sub::HandlesVia support."^^Documentation;
 		item "Add a `toolkit` keyword."^^Addition;
 	].
+
+`MooX-Pression 0.010 cpan:TOBYINK`
+	issued  2020-01-24;
+	changeset [
+		item "Require MooX::Press 0.032."^^Packaging;
+		item "MooX::Pression now loads modern Perl features like `state` and `say`."^^Change;
+		item "Methods can now have an :optimize attribute."^^Addition;
+		item "Anonymous methods."^^Addition;
+		item "Anonymous classes."^^Addition;
+		item "Anonymous roles."^^Addition;
+		item "Anonymous parameterized classes."^^Addition;
+		item "Anonymous parameterized roles."^^Addition;
+	].
