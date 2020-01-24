@@ -335,7 +335,7 @@ my $handle_role_list = sub {
 };
 
 sub _handle_factory_keyword {
-	my ($me, $name, $via, $code, $sig) = @_;
+	my ($me, $name, $via, $code, $sig, $optim) = @_;
 	if ($via) {
 		return sprintf(
 			'q[%s]->_factory(%s, \\(%s));',
@@ -345,22 +345,25 @@ sub _handle_factory_keyword {
 		);
 	}
 	if (!$sig) {
+		my $munged_code = sprintf('sub { my ($factory, $class) = (@_); do %s }', $code);
 		return sprintf(
-			'q[%s]->_factory(%s, sub { my ($factory, $class) = (@_); do %s });',
+			'q[%s]->_factory(%s, { code => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			$code,
+			$optim ? B::perlstring($munged_code) : $munged_code,
+			!!$optim,
 		);
 	}
 	my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 	my $munged_code = sprintf('sub { my($factory,$class,%s)=(shift,shift,@_); %s; do %s }', $signature_var_list, $extra, $code);
 	sprintf(
-		'q[%s]->_factory(%s, { code => %s, named => %d, signature => %s });',
+		'q[%s]->_factory(%s, { code => %s, named => %d, signature => %s, optimize => %d });',
 		$me,
 		($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-		$munged_code,
+		$optim ? B::perlstring($munged_code) : $munged_code,
 		!!$signature_is_named,
 		$type_params_stuff,
+		!!$optim,
 	);
 }
 
@@ -648,17 +651,17 @@ sub import {
 	
 	# `factory` keyword
 	#
-	keyword factory (Identifier|Block $name, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_factory_keyword($name, undef, $code, $sig);
+	keyword factory (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
+		$me->_handle_factory_keyword($name, undef, $code, $sig, !!$optim);
 	}
-	keyword factory (Identifier|Block $name, Block $code) {
-		$me->_handle_factory_keyword($name, undef, $code, undef);
+	keyword factory (Identifier|Block $name, ':optimize'? $optim, Block $code) {
+		$me->_handle_factory_keyword($name, undef, $code, undef, !!$optim);
 	}
 	keyword factory (Identifier|Block $name, 'via', Identifier $via) {
-		$me->_handle_factory_keyword($name, $via, undef, undef);
+		$me->_handle_factory_keyword($name, $via, undef, undef, !!0);
 	}
 	keyword factory (Identifier|Block $name) {
-		$me->_handle_factory_keyword($name, 'new', undef, undef);
+		$me->_handle_factory_keyword($name, 'new', undef, undef, !!0);
 	}
 	
 	# `coerce` keyword
@@ -1821,7 +1824,7 @@ Now C<< MyApp->new_man >> will call C<< MyApp::Person->new_guy >>.
 C<< factory new_person >> with no C<via> or method body is basically
 like saying C<< via new >>.
 
-The C<< :optimize >> attribute is not currently supported for C<factory>.
+The C<< :optimize >> attribute is supported for C<factory>.
 
 =head4 Implementing a singleton
 
