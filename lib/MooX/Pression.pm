@@ -1523,11 +1523,10 @@ values. For example:
       default      => 0,
       handles_via  => 'Counter',
       handles      => {
-        get_older => 'inc',   # increment age
+        birthday => 'inc',   # increment age
       },
     );
-    method birthday () {
-      $self->get_older;
+    after birthday {
       if ($self->age < 30) {
         say "yay!";
       }
