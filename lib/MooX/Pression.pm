@@ -143,6 +143,13 @@ my $handle_signature_list = sub {
 	my $seen_pos   = 0;
 	my @parsed;
 	
+	return (
+		0,
+		'',
+		'[]',
+		'',
+	) if !$sig;
+	
 	while ($sig) {
 		$sig =~ s/^\s+//xs;
 		last if !$sig;
@@ -335,7 +342,7 @@ my $handle_role_list = sub {
 };
 
 sub _handle_factory_keyword {
-	my ($me, $name, $via, $code, $sig, $optim) = @_;
+	my ($me, $name, $via, $code, $has_sig, $sig, $optim) = @_;
 	if ($via) {
 		return sprintf(
 			'q[%s]->_factory(%s, \\(%s));',
@@ -344,7 +351,7 @@ sub _handle_factory_keyword {
 			($via  =~ /^\{/ ? "scalar(do $via)"  : B::perlstring($via)),
 		);
 	}
-	if (!$sig) {
+	if (!$has_sig) {
 		my $munged_code = sprintf('sub { my ($factory, $class) = (@_); do %s }', $code);
 		return sprintf(
 			'q[%s]->_factory(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
@@ -369,10 +376,10 @@ sub _handle_factory_keyword {
 
 sub _handle_method_keyword {
 	my $me = shift;
-	my ($name, $code, $sig, $optim) = @_;
+	my ($name, $code, $has_sig, $sig, $optim) = @_;
 	
 	if (defined $name) {
-		if ($sig) {
+		if ($has_sig) {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 			return sprintf(
@@ -397,7 +404,7 @@ sub _handle_method_keyword {
 		}
 	}
 	else {
-		if ($sig) {
+		if ($has_sig) {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 			return sprintf(
@@ -422,9 +429,9 @@ sub _handle_method_keyword {
 }
 
 sub _handle_modifier_keyword {
-	my ($me, $kind, $name, $code, $sig, $optim) = @_;
+	my ($me, $kind, $name, $code, $has_sig, $sig, $optim) = @_;
 	
-	if ($sig) {
+	if ($has_sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code;
 		if ($kind eq 'around') {
@@ -517,7 +524,7 @@ sub import {
 	
 	# `class` keyword
 	#
-	keyword class ('+'? $plus, QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+	keyword class ('+'? $plus, QualifiedIdentifier $classname, '(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
 		sprintf(
@@ -544,7 +551,7 @@ sub import {
 			B::perlstring("class:$plus$classname"),
 		);
 	}
-	keyword class ('(', SignatureList $sig, ')', Block $classdfn) {
+	keyword class ('(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
 		sprintf(
@@ -574,7 +581,7 @@ sub import {
 	
 	# `role` keyword
 	#
-	keyword role (QualifiedIdentifier $classname, '(', SignatureList $sig, ')', Block $classdfn) {
+	keyword role (QualifiedIdentifier $classname, '(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
 		sprintf(
@@ -601,7 +608,7 @@ sub import {
 			B::perlstring('role:'.$classname),
 		);
 	}
-	keyword role ('(', SignatureList $sig, ')', Block $classdfn) {
+	keyword role ('(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
 		sprintf(
@@ -682,7 +689,7 @@ sub import {
 	
 	# `requires` keyword
 	#
-	keyword requires (Identifier|Block $name, '(', SignatureList $sig, ')') {
+	keyword requires (Identifier|Block $name, '(' $has_sig, SignatureList? $sig, ')') {
 		sprintf(
 			'q[%s]->_requires(%s);',
 			$me,
@@ -720,53 +727,53 @@ sub import {
 	
 	# `method` keyword
 	#
-	keyword method (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_method_keyword($name, $code, $sig, !!$optim);
+	keyword method (Identifier|Block $name, ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_method_keyword($name, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword method (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		$me->_handle_method_keyword($name, $code, undef, !!$optim);
+		$me->_handle_method_keyword($name, $code, undef, undef, !!$optim);
 	}
-	keyword method (                        ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_method_keyword(undef, $code, $sig, !!$optim);
+	keyword method (                        ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_method_keyword(undef, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword method (                        ':optimize'? $optim, Block $code) {
-		$me->_handle_method_keyword(undef, $code, undef, !!$optim);
+		$me->_handle_method_keyword(undef, $code, undef, undef, !!$optim);
 	}
 	
 	# `before`, `after`, and `around` keywords
 	#
-	keyword before (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(before => $name, $code, $sig, !!$optim);
+	keyword before (Identifier|Block $name, ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(before => $name, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword before (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		$me->_handle_modifier_keyword(before => $name, $code, undef, !!$optim);
+		$me->_handle_modifier_keyword(before => $name, $code, undef, undef, !!$optim);
 	}
-	keyword after (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(after => $name, $code, $sig, !!$optim);
+	keyword after (Identifier|Block $name, ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(after => $name, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword after (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		$me->_handle_modifier_keyword(after => $name, $code, undef, !!$optim);
+		$me->_handle_modifier_keyword(after => $name, $code, undef, undef, !!$optim);
 	}
-	keyword around (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_modifier_keyword(around => $name, $code, $sig, !!$optim);
+	keyword around (Identifier|Block $name, ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_modifier_keyword(around => $name, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword around (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		$me->_handle_modifier_keyword(around => $name, $code, undef, !!$optim);
+		$me->_handle_modifier_keyword(around => $name, $code, undef, undef, !!$optim);
 	}
 	
 	# `factory` keyword
 	#
-	keyword factory (Identifier|Block $name, ':optimize'? $optim, '(', SignatureList $sig, ')', Block $code) {
-		$me->_handle_factory_keyword($name, undef, $code, $sig, !!$optim);
+	keyword factory (Identifier|Block $name, ':optimize'? $optim, '(' $has_sig, SignatureList? $sig, ')', Block $code) {
+		$me->_handle_factory_keyword($name, undef, $code, $has_sig, $sig, !!$optim);
 	}
 	keyword factory (Identifier|Block $name, ':optimize'? $optim, Block $code) {
-		$me->_handle_factory_keyword($name, undef, $code, undef, !!$optim);
+		$me->_handle_factory_keyword($name, undef, $code, undef, undef, !!$optim);
 	}
 	keyword factory (Identifier|Block $name, 'via', Identifier $via) {
-		$me->_handle_factory_keyword($name, $via, undef, undef, !!0);
+		$me->_handle_factory_keyword($name, $via, undef, undef, undef, !!0);
 	}
 	keyword factory (Identifier|Block $name) {
-		$me->_handle_factory_keyword($name, 'new', undef, undef, !!0);
+		$me->_handle_factory_keyword($name, 'new', undef, undef, undef, !!0);
 	}
 	
 	# `coerce` keyword
