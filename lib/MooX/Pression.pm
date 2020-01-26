@@ -44,13 +44,15 @@ BEGIN {
 		}
 		elsif ($action eq -go) {
 			if ($gather{$me}{$caller}{'_defer_role'}) {
-				die 'nested roles not currently supported';
+				require Carp;
+				Carp::croak('Nested roles are not supported');
 			}
 			if ($gather{$me}{$caller}{'_defer_role_generator'}) {
-				die 'nested role generators not currently supported';
+				require Carp;
+				Carp::croak('Nested role generators are not supported');
 			}
 			if ($gather{$me}{$caller}{'_defer_class_generator'}) {
-				die 'nested class generators not currently supported';
+				$me->_undefer_class_generators($gather{$me}{$caller}{'class_generator'}||=[], delete $gather{$me}{$caller}{'_defer_class_generator'});
 			}
 			if ($gather{$me}{$caller}{'_defer_class'}) {
 				$me->_undefer_classes($gather{$me}{$caller}{'class'}, delete $gather{$me}{$caller}{'_defer_class'});
@@ -76,7 +78,7 @@ BEGIN {
 	}
 	sub _undefer_classes {
 		my ($me, $classes, $d) = @_;
-		my %class_hash = @$classes;
+		my %class_hash = @{$classes||[]};
 		my @deferred;
 		my $max_depth = 0;
 		while (@$d) {
@@ -91,6 +93,15 @@ BEGIN {
 				next SPEC unless $spec->{_depth} == $depth;
 				my $parent_key = join('|', @{$spec->{_stack}});
 				my $my_key     = join('|', @{$spec->{_stack}}, $spec->{_class_name});
+				if (not $class_hash{$parent_key}) {
+					require Carp;
+					Carp::croak(sprintf(
+						'%s is nested in %s but %s is not a class',
+						$spec->{_class_name},
+						$spec->{_stack}[-1],
+						$spec->{_stack}[-1],
+					));
+				}
 				push @{ $class_hash{$parent_key}{subclass} ||=[] }, $spec->{_class_name}, $spec;
 				$class_hash{$my_key} = $spec;
 			}
@@ -101,7 +112,22 @@ BEGIN {
 			delete $spec->{_depth};
 		}
 	}
-	
+	sub _undefer_class_generators {
+		my ($me, $classes, $d) = @_;
+		while (@$d) {
+			my ($class, $spec) = splice(@$d, 0, 2);
+			my $extends = $spec->{_stack}[-1];
+			my $next = delete($spec->{code});
+			$spec->{code} = sub {
+				my $got = $next->(@_);
+				$got->{extends} ||= [$extends];
+				$got;
+			};
+			delete $spec->{_stack};
+			push @$classes, $class, $spec;
+		}
+	}
+
 	$INC{'MooX/Pression/_Gather.pm'} = __FILE__;
 };
 
@@ -2258,9 +2284,29 @@ B<SpeciesClass> and B<SpeciesInstance> type constraints.
   is_SpeciesInstance( $lassie );      # true
   is_SpeciesClass( ref($lassie) );    # true
 
-Subclasses cannot be nested inside parameterizable classes.
-It should theoretically be possible to nest parameterizable classes
-within regular classes, but this isn't implemented yet.
+Subclasses cannot be nested inside parameterizable classes, but
+parameterizable classes can be nested inside regular classes, in
+which case the classes they generate will inherit from the outer
+class.
+
+  package MyApp {
+    use MooX::Pression;
+    
+    class Animal {
+      has name;
+      class Species ( Str $common_name, Str $binomial ) {
+        constant common_name  = $common_name;
+        constant binomial     = $binomial;
+      }
+    }
+    
+    class Dog {
+      extends Species('dog', 'Canis familiaris');
+      method bark () {
+        say "woof!";
+      }
+    }
+  }
 
 Anonymous parameterizable classes are possible:
 
