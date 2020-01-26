@@ -2146,6 +2146,71 @@ If C<class> definitions are nested, C<authority> will be inherited by
 child classes. If a parent class is specified via C<extends>, C<authority>
 will not be inherited.
 
+=head2 Helper Subs
+
+Earlier it was stated that C<sub> cannot be used to define methods in
+classes and roles. This is true, but that doesn't mean that it has no
+use.
+
+  package MyApp {
+    use MooX::Pression;
+    
+    sub helper_function { ... }
+    
+    class Foo {
+      method foo {
+        ...;
+        helper_function(...);
+        ...;
+      }
+    }
+    
+    class Bar {
+      sub other_helper { ... }
+      method bar {
+        ...;
+        helper_function(...);
+        other_helper(...);
+        ...;
+      }
+    }
+  }
+
+The subs defined by C<sub> end up in the "MyApp" package, not
+"MyApp::Foo" or "MyApp::Bar". They can be called by any of the classes
+and roles defined in MyApp. This makes them suitable for helper subs
+like logging, L<List::Util>/L<Scalar::Util> sorts of functions, and
+so on.
+
+  package MyApp {
+    use MooX::Pression;
+    
+    use List::Util qw( any all first reduce );
+    # the above functions are now available within
+    # all of MyApp's classes and roles, but won't
+    # pollute any of their namespaces.
+    
+    use namespace::clean;
+    # And now they won't even pollute MyApp's namespace.
+    # Though I'm pretty sure this will also stop them
+    # from working in any methods that used ":optimize".
+    
+    class Foo { ... } 
+    role Bar { ... } 
+    role Baz { ... } 
+  }
+
+C<sub> is also usually your best option for those tiny little
+coderefs that need to be defined here and there:
+
+  has foo (
+    is       => lazy,
+    type     => ArrayRef[Str],
+    builder  => sub {  []  },
+  );
+
+Though consider using L<Sub::Quote> if you're using Moo.
+
 =head2 Utilities
 
 MooX::Pression also exports constants C<true> and C<false> into your
