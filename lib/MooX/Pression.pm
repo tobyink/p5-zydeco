@@ -2253,7 +2253,13 @@ You can, of course, turn on extra features yourself.
     ...;
   }
 
-And MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
+(The C<current_sub> feature is unlikely to work fully unless you
+have C<:optimize> switched on for that method, or the method does not
+include a signature. For non-optimized methods with a signature, a
+wrapper is installed that handles checks, coercions, and defaults.
+C<< __SUB__ >> will point to the "inner" sub, minus the wrapper.)
+
+MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
 
 And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
