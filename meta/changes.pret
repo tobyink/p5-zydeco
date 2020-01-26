@@ -90,3 +90,11 @@
 		item "Tests of () signatures for methods, method modifiers, and parameterizable classes."^^Tests;
 		item "Fixes for parsing and interpreting () signatures."^^Bugfix;
 	].
+
+`MooX-Pression 0.012 cpan:TOBYINK`
+	issued  2020-01-26;
+	changeset [
+		item "Parameterizable classes can now be nested inside regular classes."^^Addition;
+		item "Test how `sub` acts inside classes."^^Tests;
+		item "Document how `sub` acts inside classes and roles."^^Documentation;
+	].
