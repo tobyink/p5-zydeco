@@ -1922,6 +1922,9 @@ are not shifted off C<< @_ >> for you, but the variables are still defined.
 
 The C<< :optimize >> attribute is supported for C<around>.
 
+Note that C<< SUPER:: >> won't work as expected in MooX::Pression, so
+C<around> should be used instead.
+
 =head3 C<< factory >>
 
 The C<factory> keyword is used to define alternative constructors for
