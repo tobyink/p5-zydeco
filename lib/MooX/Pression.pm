@@ -16,7 +16,7 @@ our $VERSION   = '0.012';
 
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
-use Exporter::Shiny our @EXPORT = qw( version authority );
+use Exporter::Shiny our @EXPORT = qw( version authority overload );
 
 BEGIN {
 	package MooX::Pression::_Gather;
@@ -846,6 +846,20 @@ sub version {
 #
 sub authority {
 	$OPTS{authority} = shift;
+}
+
+# `overload` keyword
+#
+sub overload {
+	if (@_ == 1 and ref($_[0]) eq 'HASH') {
+		push @{ $OPTS{overload} ||= [] }, %{+shift};
+	}
+	elsif (@_ == 1 and ref($_[0]) eq 'ARRAY') {
+		push @{ $OPTS{overload} ||= [] }, @{+shift};
+	}
+	else {
+		push @{ $OPTS{overload} ||= [] }, @_;
+	}
 }
 
 
@@ -2109,6 +2123,16 @@ statement more readable.
   }
 
 The C<< :optimize >> attribute is not currently supported for C<coerce>.
+
+=head3 C<< overload >>
+
+  class Collection {
+    has @items;
+    overload '@{}' => sub { shift->list };
+  }
+
+The list passed to C<overload> is passed to L<overload> with no other
+processing.
 
 =head3 C<< version >>
 
