@@ -1917,10 +1917,10 @@ keyword C<multi>
   use MooX::Pression prefix => 'MyApp';
   
   class Widget {
-    method foo :alias(quux) (Any $x) {
+    multi method foo :alias(quux) (Any $x) {
       say "Buzz";
     }
-    method foo (HashRef $h) {
+    multi method foo (HashRef $h) {
       say "Fizz";
     }
   }
