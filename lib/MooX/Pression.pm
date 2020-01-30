@@ -2744,6 +2744,34 @@ They work nicely in MooX::Pression though.
 Please report any bugs to
 L<http://rt.cpan.org/Dist/Display.html?Queue=MooX-Pression>.
 
+=head1 TODO
+
+=head2 Better type constraint parsing
+
+Better parsing for type constraints would be good. Right now, type
+constraints are parsed from the signature by looking for a non-numeric
+word character and grabbing everything up to the first whitespace character.
+
+A good grammar for type constraints would be something like: types can
+Perl (possibly qualified) identifiers (like "Foo" or "Foo::Bar"). They
+can be optionally prefixed with "~", optionally suffixed with "[...]",
+combined with "|" and "&" infix operators, and may use parentheses to
+express precedence. The grammar for the contents of the square brackets
+is that it's a list separated by commas and/or fat commas. List items
+may be strings, numbers, quoted regexps, or other type constraints.
+(Those other type constraints can themselves have things like infix
+operators, "[...]", etc.)
+
+The regexp doesn't really need to break down all the components; just
+figure out where it ends, so the type can be passed to L<Type::Parser>.
+
+=head2 Plugin system
+
+MooX::Pression can often load MooX/MouseX/MooseX plugins and work
+fine with them, but some things won't work, like plugins that rely on
+being able to wrap C<has>. So it would be nice to have a plugin system
+that extensions can hook into.
+
 =head1 SEE ALSO
 
 Less magic version:
