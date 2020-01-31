@@ -106,3 +106,11 @@
 		item "`overload` keyword."^^Addition;
 		item "Warn that `SUPER::` and `__SUB__` won't work the way you might expect them to work."^^Documentation;
 	].
+
+`MooX-Pression 0.014 cpan:TOBYINK`
+	issued  2020-01-31;
+	changeset [
+		item "`abstract class` keyword."^^Addition;
+		item "`interface` keyword."^^Addition;
+		item "Include simple JSON encoder using multi methods as an example."^^Documentation;
+	].
