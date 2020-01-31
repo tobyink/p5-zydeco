@@ -114,3 +114,9 @@
 		item "`interface` keyword."^^Addition;
 		item "Include simple JSON encoder using multi methods as an example."^^Documentation;
 	].
+
+`MooX-Pression 0.015 cpan:TOBYINK`
+	issued  2020-01-31;
+	changeset [
+		item "Support equals sign to provide attribute default value."^^Addition;
+	].
