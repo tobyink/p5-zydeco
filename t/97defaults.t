@@ -8,7 +8,7 @@ package MyApp {
 	class Foo {
 		has  foo = 666;
 		has  bar(type => Num) = 999;
-		has $baz = 42;
+		has {'baz'} = 42;
 	}
 }
 

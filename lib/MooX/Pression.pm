@@ -833,11 +833,11 @@ sub import {
 	
 	# `has` keyword
 	#
-	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix) {
-		$me->_handle_has_keyword("$plus$sigil$name$postfix", undef, undef);
+	keyword has ('+'? $plus, Identifier $name, '!'? $postfix) {
+		$me->_handle_has_keyword("$plus$name$postfix", undef, undef);
 	}
-	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '(', List $spec, ')') {
-		$me->_handle_has_keyword("$plus$sigil$name$postfix", $spec, undef);
+	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '(', List $spec, ')') {
+		$me->_handle_has_keyword("$plus$name$postfix", $spec, undef);
 	}
 	keyword has (Block $name, '(', List $spec, ')') {
 		$me->_handle_has_keyword($name, $spec, undef);
@@ -845,11 +845,11 @@ sub import {
 	keyword has (Block $name) {
 		$me->_handle_has_keyword($name, undef, undef);
 	}
-	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '=', ListElem $default) {
-		$me->_handle_has_keyword("$plus$sigil$name$postfix", undef, $default);
+	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '=', ListElem $default) {
+		$me->_handle_has_keyword("$plus$name$postfix", undef, $default);
 	}
-	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) {
-		$me->_handle_has_keyword("$plus$sigil$name$postfix", $spec, $default);
+	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) {
+		$me->_handle_has_keyword("$plus$name$postfix", $spec, $default);
 	}
 	keyword has (Block $name, '(', List $spec, ')', '=', ListElem $default) {
 		$me->_handle_has_keyword($name, $spec, $default);
@@ -1752,21 +1752,11 @@ values. For example:
     }
   }
 
-It is possible to add hints to the attribute name as a shortcut for common
-specifications.
+A trailing C<< ! >> indicates a required attribute.
 
   class Person {
-    has $name!;
-    has $age;
-    has @kids;
+    has name!;
   }
-
-Using C<< $ >>, C<< @ >> and C<< % >> sigils hints that the values should
-be a scalar, an arrayref, or a hashref (and tries to be smart about
-overloading). It I<< does not make the attribute available as a lexical >>!
-You still access the value as C<< $self->age >> and not just C<< $age >>.
-
-The trailing C<< ! >> indicates a required attribute.
 
 It is possible to give a default using an equals sign.
 
@@ -1831,7 +1821,7 @@ name with a block that returns the name as a string.
 This can be used to define a bunch of types from a list.
 
   class Person {
-    my @attrs = qw( $name $age );
+    my @attrs = qw( name age );
     for my $attr (@attrs) {
       has {$attr} ( required => true );
     }
@@ -1855,7 +1845,7 @@ C<< $person_object->latin_name >> will return 'Homo sapiens'.
 =head3 C<< method >>
 
   class Person {
-    has $spouse;
+    has spouse;
     
     method marry {
       my ($self, $partner) = @_;
@@ -1892,7 +1882,7 @@ the body of the method.
 =head4 Signatures for Named Arguments
 
   class Person {
-    has $spouse;
+    has spouse;
     
     method marry ( Person *partner, Object *date = DateTime->now ) {
       $self->spouse( $arg->partner );
@@ -2234,7 +2224,7 @@ just one object in a factory method.
   class Wheel;
   
   class Car {
-    has @wheels;
+    has wheels = [];
     
     factory new_three_wheeler () {
       return $class->new(
@@ -2371,7 +2361,7 @@ The C<< :optimize >> attribute is not currently supported for C<coerce>.
 =head3 C<< overload >>
 
   class Collection {
-    has @items;
+    has items = [];
     overload '@{}' => sub { shift->list };
   }
 
