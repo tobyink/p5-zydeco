@@ -625,6 +625,26 @@ sub _handle_package_keyword {
 	}
 }
 
+sub _handle_has_keyword {
+	my ($me, $name, $rawspec, $default) = @_;
+	
+	$rawspec = '()' if !defined $rawspec;
+	
+	if (defined $default and $default =~ /\$self/) {
+		$rawspec = "lazy => !!1, default => sub { my \$self = \$_[0]; $default }, $rawspec";
+	}
+	elsif (defined $default) {
+		$rawspec = "default => sub { $default }, $rawspec";
+	}
+	
+	sprintf(
+		'q[%s]->_has(scalar(%s), %s)',
+		$me,
+		($name =~ /^\{/) ? "do $name" : B::perlstring($name),
+		$rawspec,
+	);
+}
+
 #
 # KEYWORDS/UTILITIES
 #
@@ -814,16 +834,28 @@ sub import {
 	# `has` keyword
 	#
 	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix) {
-		sprintf('q[%s]->_has(%s);', $me, B::perlstring("$plus$sigil$name$postfix"));
+		$me->_handle_has_keyword("$plus$sigil$name$postfix", undef, undef);
 	}
 	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '(', List $spec, ')') {
-		sprintf('q[%s]->_has(%s, %s);', $me, B::perlstring("$plus$sigil$name$postfix"), $spec);
-	}
-	keyword has (Block $name) {
-		sprintf('q[%s]->_has(scalar(do %s));', $me, $name);
+		$me->_handle_has_keyword("$plus$sigil$name$postfix", $spec, undef);
 	}
 	keyword has (Block $name, '(', List $spec, ')') {
-		sprintf('q[%s]->_has(scalar(do %s), %s);', $me, $name, $spec);
+		$me->_handle_has_keyword($name, $spec, undef);
+	}
+	keyword has (Block $name) {
+		$me->_handle_has_keyword($name, undef, undef);
+	}
+	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '=', ListElem $default) {
+		$me->_handle_has_keyword("$plus$sigil$name$postfix", undef, $default);
+	}
+	keyword has ('+'? $plus, /[\$\@\%]/? $sigil, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) {
+		$me->_handle_has_keyword("$plus$sigil$name$postfix", $spec, $default);
+	}
+	keyword has (Block $name, '(', List $spec, ')', '=', ListElem $default) {
+		$me->_handle_has_keyword($name, $spec, $default);
+	}
+	keyword has (Block $name, '=', ListElem $default) {
+		$me->_handle_has_keyword($name, undef, $default);
 	}
 	
 	# `constant` keyword
@@ -1735,6 +1767,49 @@ overloading). It I<< does not make the attribute available as a lexical >>!
 You still access the value as C<< $self->age >> and not just C<< $age >>.
 
 The trailing C<< ! >> indicates a required attribute.
+
+It is possible to give a default using an equals sign.
+
+  class WidgetCollection {
+    has name = "Widgets";
+    has count (type => Num) = 0;
+  }
+
+Note that the default comes after the spec, so in cases where the spec is
+long, it may be clearer to express the default inside the spec:
+
+  class WidgetCollection {
+    has name = "Widgets";
+    has count (
+      type     => Num,
+      lazy     => true,
+      required => false,
+      default  => 0,
+    );
+  }
+
+Defaults given this way will be eager (non-lazy), but can be made lazy using
+the spec:
+
+  class WidgetCollection {
+    has name = "Widgets";
+    has count (is => lazy) = 0;
+  }
+
+Defaults I<can> use the C<< $self >> object:
+
+  class WidgetCollection {
+    has name         = "Widgets";
+    has display_name = $self->name;
+  }
+
+Any default that includes C<< $self >> will automatically be lazy, but can be
+made eager using the spec. (It is almost certainly a bad idea to do so though.)
+
+  class WidgetCollection {
+    has name = "Widgets";
+    has display_name ( lazy => false ) = $self->name;
+  }
 
 If you need to decide an attribute name on-the-fly, you can replace the
 name with a block that returns the name as a string.
