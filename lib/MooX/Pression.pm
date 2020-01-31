@@ -1394,6 +1394,21 @@ It is possible to prefix a class name with a plus sign:
 Now the employee class will be named C<MyApp::Person::Employee> instead of
 the usual C<MyApp::Employee>.
 
+Classes can be declared as abstract:
+
+  package MyApp {
+    use MooX::Pression;
+    abstract class Animal {
+      class Cat;
+      class Dog;
+    }
+  }
+
+For abstract classes, there is no constructor or factory, so you cannot create
+an Animal instance directly; but you can create instances of the subclasses.
+It is usually better to use roles than abstract classes, but sometimes the
+abstract class makes more intuitive sense.
+
 =head3 C<< role >>
 
 Define a very basic role:
@@ -1410,6 +1425,32 @@ This is just the same as C<class> but defines a role instead of a class.
 
 Roles cannot be nested within each other, nor can roles be nested in classes,
 nor classes in roles.
+
+=head3 C<< interface >>
+
+An interface is a lightweight role. It cannot define attributes, methods,
+multimethods, or method modifiers, but otherwise functions as a role.
+(It may have C<requires> statements and define constants.)
+
+  package MyApp;
+  use MooX::Pression;
+  
+  interface Serializer {
+    requires serialize;
+  }
+  
+  interface Deserializer {
+    requires deserialize;
+  }
+  
+  class MyJSON {
+    with Serializer, Deserialize;
+    method serialize   ($value) { ... } 
+    method deserialize ($value) { ... } 
+  }
+  
+  my $obj = MyApp->new_myjson;
+  $obj->does('MyApp::Serializer');   # true
 
 =head3 C<< toolkit >>
 
