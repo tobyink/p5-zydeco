@@ -2085,7 +2085,7 @@ keyword C<multi>
 This feature requires L<MooX::Press> 0.035 and L<Sub::MultiMethod> to be
 installed.
 
-=head3 require
+=head3 C<< requires >>
 
 Indicates that a role requires classes to fulfil certain methods.
 
