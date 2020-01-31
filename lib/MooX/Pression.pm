@@ -2097,7 +2097,7 @@ Indicates that a role requires classes to fulfil certain methods.
   class Employee {
     extends Person;
     with Payable;
-    has account;
+    has account!;
     method deposit (Num $amount) {
       ...;
     }
