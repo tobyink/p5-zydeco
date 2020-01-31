@@ -555,6 +555,75 @@ sub _handle_modifier_keyword {
 	}
 }
 
+sub _handle_package_keyword {
+	my ($me, $kind, $name, $code, $has_sig, $sig, $plus, $opts) = @_;
+	
+	if ($kind eq 'abstract') {
+		$kind = 'class';
+		$code = "{ q[$me]->_abstract(1);  $code }";
+	}
+	
+	if ($kind eq 'interface') {
+		$kind = 'role';
+		$code = "{ q[$me]->_interface(1); $code }";
+	}
+	
+	if ($name and $has_sig) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $code);
+		sprintf(
+			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use MooX::Pression::_Gather -unparent;',
+			B::perlstring("$plus$name"),
+			B::perlstring("$kind\_generator:$plus$name"),
+			$munged_code,
+			!!$signature_is_named,
+			$type_params_stuff,
+		);
+	}
+	elsif ($has_sig) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $code);
+		sprintf(
+			'q[%s]->anonymous_generator(%s => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$kind,
+			$munged_code,
+			!!$signature_is_named,
+			$type_params_stuff,
+			B::perlstring($opts->{toolkit}||'Moo'),
+			B::perlstring($opts->{prefix}),
+			B::perlstring($opts->{factory_package}),
+			B::perlstring($opts->{type_library}),
+		);
+	}
+	elsif ($name) {
+		$code
+			? sprintf(
+				'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
+				B::perlstring("$plus$name"),
+				B::perlstring("$kind:$plus$name"),
+				$me,
+				$code,
+			)
+			: sprintf(
+				'use MooX::Pression::_Gather -gather, %s => {};',
+				B::perlstring("$kind:$plus$name"),
+			);
+	}
+	else {
+		$code ||= '{}';
+		sprintf(
+			'q[%s]->anonymous_package(%s => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
+			$me,
+			$kind,
+			$code,
+			B::perlstring($opts->{toolkit}||'Moo'),
+			B::perlstring($opts->{prefix}),
+			B::perlstring($opts->{factory_package}),
+			B::perlstring($opts->{type_library}),
+		);
+	}
+}
 
 #
 # KEYWORDS/UTILITIES
@@ -604,118 +673,76 @@ sub import {
 	
 	# `class` keyword
 	#
-	keyword class ('+'? $plus, QualifiedIdentifier $classname, '(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
-		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
-		sprintf(
-			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use MooX::Pression::_Gather -unparent;',
-			B::perlstring("$plus$classname"),
-			B::perlstring("class_generator:$plus$classname"),
-			$munged_code,
-			!!$signature_is_named,
-			$type_params_stuff,
-		);
+	keyword class ('+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig,  $plus, \%opts);
 	}
-	keyword class ('+'? $plus, QualifiedIdentifier $classname, Block $classdfn) {
-		sprintf(
-			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
-			B::perlstring("$plus$classname"),
-			B::perlstring("class:$plus$classname"),
-			$me,
-			$classdfn,
-		);
+	keyword class ('+'? $plus, QualifiedIdentifier $name, Block $block) {
+		my $return = $me->_handle_package_keyword(class => $name, $block, 0,        undef, $plus, \%opts);
 	}
-	keyword class ('+'? $plus, QualifiedIdentifier $classname) {
-		sprintf(
-			'use MooX::Pression::_Gather -gather, %s => {};',
-			B::perlstring("class:$plus$classname"),
-		);
+	keyword class ('+'? $plus, QualifiedIdentifier $name) {
+		my $return = $me->_handle_package_keyword(class => $name, '',     0,        undef, $plus, \%opts);
 	}
-	keyword class ('(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
-		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
-		sprintf(
-			'q[%s]->anonymous_generator(class => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
-			$me,
-			$munged_code,
-			!!$signature_is_named,
-			$type_params_stuff,
-			B::perlstring($opts{toolkit}||'Moo'),
-			B::perlstring($opts{prefix}),
-			B::perlstring($opts{factory_package}),
-			B::perlstring($opts{type_library}),
-		);
+	keyword class ('(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(class => undef, $block, $has_sig, $sig,  '',    \%opts);
 	}
-	keyword class (Block? $classdfn) {
-		$classdfn ||= '{}';
-		sprintf(
-			'q[%s]->anonymous_package(class => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
-			$me,
-			$classdfn,
-			B::perlstring($opts{toolkit}||'Moo'),
-			B::perlstring($opts{prefix}),
-			B::perlstring($opts{factory_package}),
-			B::perlstring($opts{type_library}),
-		);
+	keyword class (Block? $block) {
+		my $return = $me->_handle_package_keyword(class => undef, $block, 0,        undef, '',    \%opts);
 	}
-	
+
+	# `abstract` keyword
+	#
+	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig,  $plus, \%opts);
+	}
+	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, Block $block) {
+		my $return = $me->_handle_package_keyword(abstract => $name, $block, 0,        undef, $plus, \%opts);
+	}
+	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name) {
+		my $return = $me->_handle_package_keyword(abstract => $name, '',     0,        undef, $plus, \%opts);
+	}
+	keyword abstract ('class', '(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(abstract => undef, $block, $has_sig, $sig,  '',    \%opts);
+	}
+	keyword abstract ('class', Block? $block) {
+		my $return = $me->_handle_package_keyword(abstract => undef, $block, 0,        undef, '',    \%opts);
+	}
+
 	# `role` keyword
 	#
-	keyword role (QualifiedIdentifier $classname, '(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
-		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
-		sprintf(
-			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use MooX::Pression::_Gather -unparent;',
-			B::perlstring($classname),
-			B::perlstring('role_generator:'.$classname),
-			$munged_code,
-			!!$signature_is_named,
-			$type_params_stuff,
-		);
+	keyword role (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(role => $name, $block, $has_sig, $sig,  '',    \%opts);
 	}
-	keyword role (QualifiedIdentifier $classname, Block $classdfn) {
-		sprintf(
-			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
-			B::perlstring($classname),
-			B::perlstring('role:'.$classname),
-			$me,
-			$classdfn,
-		);
+	keyword role (QualifiedIdentifier $name, Block $block) {
+		my $return = $me->_handle_package_keyword(role => $name, $block, 0,        undef, '',    \%opts);
 	}
-	keyword role (QualifiedIdentifier $classname) {
-		sprintf(
-			'use MooX::Pression::_Gather -gather, %s => {};',
-			B::perlstring('role:'.$classname),
-		);
+	keyword role (QualifiedIdentifier $name) {
+		my $return = $me->_handle_package_keyword(role => $name, '',     0,        undef, '',    \%opts);
 	}
-	keyword role ('(' $has_sig, SignatureList? $sig, ')', Block $classdfn) {
-		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
-		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $classdfn);
-		sprintf(
-			'q[%s]->anonymous_generator(role => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
-			$me,
-			$munged_code,
-			!!$signature_is_named,
-			$type_params_stuff,
-			B::perlstring($opts{toolkit}||'Moo'),
-			B::perlstring($opts{prefix}),
-			B::perlstring($opts{factory_package}),
-			B::perlstring($opts{type_library}),
-		);
+	keyword role ('(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(role => undef, $block, $has_sig, $sig,  '',    \%opts);
 	}
-	keyword role (Block? $classdfn) {
-		$classdfn ||= '{}';
-		sprintf(
-			'q[%s]->anonymous_package(role => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
-			$me,
-			$classdfn,
-			B::perlstring($opts{toolkit}||'Moo'),
-			B::perlstring($opts{prefix}),
-			B::perlstring($opts{factory_package}),
-			B::perlstring($opts{type_library}),
-		);
+	keyword role (Block? $block) {
+		my $return = $me->_handle_package_keyword(role => undef, $block, 0,        undef, '',    \%opts);
 	}
-	
+
+	# `interface` keyword
+	#
+	keyword interface (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(interface => $name, $block, $has_sig, $sig,  '',    \%opts);
+	}
+	keyword interface (QualifiedIdentifier $name, Block $block) {
+		my $return = $me->_handle_package_keyword(interface => $name, $block, 0,        undef, '',    \%opts);
+	}
+	keyword interface (QualifiedIdentifier $name) {
+		my $return = $me->_handle_package_keyword(interface => $name, '',     0,        undef, '',    \%opts);
+	}
+	keyword interface ('(' $has_sig, SignatureList? $sig, ')', Block $block) {
+		my $return = $me->_handle_package_keyword(interface => undef, $block, $has_sig, $sig,  '',    \%opts);
+	}
+	keyword interface (Block? $block) {
+		my $return = $me->_handle_package_keyword(interface => undef, $block, 0,        undef, '',    \%opts);
+	}
+
 	# `toolkit` keyword
 	#
 	keyword toolkit (Identifier $tk, '(', QualifiedIdentifier|Comma @imports, ')') {
@@ -956,6 +983,14 @@ sub _begin {
 sub _end {
 	shift;
 	$OPTS{end} = shift;
+}
+sub _interface {
+	shift;
+	$OPTS{interface} = shift;
+}
+sub _abstract {
+	shift;
+	$OPTS{abstract} = shift;
 }
 sub _with {
 	shift;
