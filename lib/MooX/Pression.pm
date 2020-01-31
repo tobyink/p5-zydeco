@@ -17,6 +17,7 @@ our $VERSION   = '0.016';
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
 use Exporter::Shiny our @EXPORT = qw( version authority overload );
+use Devel::StrictMode qw(STRICT);
 
 BEGIN {
 	package MooX::Pression::_Gather;
@@ -648,6 +649,30 @@ sub _handle_has_keyword {
 	);
 }
 
+sub _handle_requires_keyword {
+	my ($me, $name, $has_sig, $sig) = @_;
+	my $r1 = sprintf(
+		'q[%s]->_requires(%s);',
+		$me,
+		($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+	);
+	my $r2 = '';
+	if (STRICT and $has_sig) {
+		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $handle_signature_list->($sig);
+		$r2 = sprintf(
+			'q[%s]->_modifier(q(around), %s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+			$me,
+			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			B::perlstring('sub { my $next = shift; goto $next }'),
+			!!$signature_is_named,
+			$type_params_stuff,
+			1,
+		);
+		warn ">>> $r2";
+	}
+	"$r1$r2";
+}
+
 #
 # KEYWORDS/UTILITIES
 #
@@ -820,18 +845,10 @@ sub import {
 	# `requires` keyword
 	#
 	keyword requires (Identifier|Block $name, '(' $has_sig, SignatureList? $sig, ')') {
-		sprintf(
-			'q[%s]->_requires(%s);',
-			$me,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-		);
+		$me->_handle_requires_keyword("$name", $has_sig, $sig);
 	}
 	keyword requires (Identifier|Block $name) {
-		sprintf(
-			'q[%s]->_requires(%s);',
-			$me,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-		);
+		$me->_handle_requires_keyword("$name", 0, undef);
 	}
 	
 	# `has` keyword
@@ -2104,8 +2121,30 @@ Indicates that a role requires classes to fulfil certain methods.
     }
   }
 
-Required methods have an optional signature; this is currently
-ignored but may be useful for self-documenting code.
+Required methods have an optional signature; this is usually ignored, but
+if L<Devel::StrictMode> determines that strict behaviour is being used,
+the signature will be applied to the method via an C<around> modifier.
+
+Or to put it another way, this:
+
+  role Payable {
+    requires account;
+    requires deposit (Num $amount);
+  }
+
+Is a shorthand for this:
+
+  role Payable {
+    requires account;
+    requires deposit;
+    
+    use Devel::StrictMode 'STRICT';
+    if (STRICT) {
+     around deposit (Num $amount) {
+       $self->$next(@_);
+     }
+    }
+  }
 
 =head3 C<< before >>
 
