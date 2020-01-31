@@ -127,4 +127,5 @@
 		item "Drop support for `has $foo` because it looked like a lexical variable and could be confusing."^^Removal;
 		item "Drop support for `has @foo` because it looked like a lexical variable and could be confusing."^^Removal;
 		item "Drop support for `has %foo` because it looked like a lexical variable and could be confusing."^^Removal;
+		item "For consistency with method signatures, support `has *foo` to mean the same as `has foo`."^^Addition;
 	].

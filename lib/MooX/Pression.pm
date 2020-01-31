@@ -637,6 +637,9 @@ sub _handle_has_keyword {
 		$rawspec = "default => sub { $default }, $rawspec";
 	}
 	
+	$name =~ s/^\+\*/+/;
+	$name =~ s/^\*//;
+	
 	sprintf(
 		'q[%s]->_has(scalar(%s), %s)',
 		$me,
@@ -833,10 +836,10 @@ sub import {
 	
 	# `has` keyword
 	#
-	keyword has ('+'? $plus, Identifier $name, '!'? $postfix) {
+	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix) {
 		$me->_handle_has_keyword("$plus$name$postfix", undef, undef);
 	}
-	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '(', List $spec, ')') {
+	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '(', List $spec, ')') {
 		$me->_handle_has_keyword("$plus$name$postfix", $spec, undef);
 	}
 	keyword has (Block $name, '(', List $spec, ')') {
@@ -845,10 +848,10 @@ sub import {
 	keyword has (Block $name) {
 		$me->_handle_has_keyword($name, undef, undef);
 	}
-	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '=', ListElem $default) {
+	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '=', ListElem $default) {
 		$me->_handle_has_keyword("$plus$name$postfix", undef, $default);
 	}
-	keyword has ('+'? $plus, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) {
+	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) {
 		$me->_handle_has_keyword("$plus$name$postfix", $spec, $default);
 	}
 	keyword has (Block $name, '(', List $spec, ')', '=', ListElem $default) {
@@ -1831,6 +1834,14 @@ You can think of the syntax as being kind of like C<print>.
 
   print BAREWORD_FILEHANDLE @strings;
   print { block_returning_filehandle(); } @strings;
+
+The names of attributes can start with an asterisk:
+
+  has *foo;
+
+This adds no extra meaning, but is supported for consistency with the syntax
+of named parameters in method signatures. (Depending on your text editor, it
+may also improve syntax highlighting.)
 
 =head3 C<< constant >>
 
