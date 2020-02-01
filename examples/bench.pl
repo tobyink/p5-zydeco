@@ -7,24 +7,27 @@ MooseX::Declare,
 Moops+Moo,
 Moops+Moose,
 MooX::Pression+Moo,
-MooX::Pression+Moose.
+MooX::Pression+Moose, and
+Dios.
 
-             Rate       MXD Moops_Moo   MXP_Moo       MXP     Moops
- MXD        101/s        --      -97%      -98%      -98%      -98%
- Moops_Moo 3257/s     3128%        --      -25%      -30%      -46%
- MXP_Moo   4349/s     4210%       34%        --       -7%      -28%
- MXP       4674/s     4532%       43%        7%        --      -22%
- Moops     6023/s     5869%       85%       39%       29%        --
+ #             Rate      Dios       MXD Moops_Moo   MXP_Moo       MXP     Moops
+ # Dios      2.17/s        --      -98%     -100%     -100%     -100%     -100%
+ # MXD       99.0/s     4456%        --      -97%      -98%      -98%      -98%
+ # Moops_Moo 3349/s   153936%     3281%        --      -23%      -29%      -45%
+ # MXP_Moo   4325/s   198840%     4266%       29%        --       -8%      -29%
+ # MXP       4699/s   216056%     4644%       40%        9%        --      -22%
+ # Moops     6053/s   278345%     6011%       81%       40%       29%        --
 
 For Moose classes, Moops is the fastest, followed by MooseX::Pression,
 with MooseX::Declare trailing a long was behind.
 
 For Moo classes, MooX::Pression beats Moops.
 
-With the exception of MooseX::Declare, Moose-based classes are usually
-faster at runtime than Moo-based classes. Compile time isn't measured
-in this benchmark, but it's likely that Moo-based classes will compile
-faster.
+All of the above are faster than Dios.
+
+Compile time isn't measured in this benchmark, but it's likely that Moo-based
+classes will compile faster. Moops compiles a lot faster than MooseX::Declare,
+MooX::Pression, and Dios.
 
 =head1 AUTHOR
 
@@ -74,6 +77,19 @@ use IO::Callback;
 }
 
 {
+	use Dios;
+	class Foo::Dios {
+		has Int $.n is rw //= 0;
+		method add (Int $x) {
+			$self->set_n( $self->get_n + $x );
+		}
+		method n () {
+			$self->get_n;
+		}
+	}
+}
+
+{
 	use MooX::Pression;
 	class ::Foo::MXP {
 		toolkit Moose;
@@ -92,18 +108,18 @@ use IO::Callback;
 }
 # Test each class works as expected
 #
-for my $class ('Foo::Moops', 'Foo::Moops_Moo', 'Foo::MXD', 'Foo::MXP', 'Foo::MXP_Moo') {
+for my $class ('Foo::Moops', 'Foo::Moops_Moo', 'Foo::MXD', 'Foo::MXP', 'Foo::MXP_Moo', 'Foo::Dios') {
 	
 	like(
 		exception { $class->new(n => 1.1) },
-		qr{(Validation failed for 'Int')|(did not pass type constraint "Int")},
+		qr{(Validation failed for 'Int')|(did not pass type constraint "Int")|(is not of type Int)},
 		"Class '$class' throws error on incorrect constructor call",
 	);
 	
 	my $o = $class->new(n => 0);
 	like(
 		exception { $o->add(1.1) },
-		qr{(^Validation failed)|(did not pass type constraint "Int")},
+		qr{(^Validation failed)|(did not pass type constraint "Int")|(is not of type Int)},
 		"Objects of class '$class' throw error on incorrect method call",
 	);
 	
@@ -145,7 +161,17 @@ cmpthese(-1, {
 		my $sum = 'Foo::MXP_Moo'->new(n => 0);
 		$sum->add($_) for 0..100;
 	},
+	Dios => q{
+		my $sum = 'Foo::Dios'->new(n => 0);
+		$sum->add($_) for 0..100;
+	},
 });
+
+#use Data::Dumper;
+#$Data::Dumper::Deparse = 1;
+#print Dumper ({ map {
+#	$_ => $_->can('add')
+#} qw/ Foo::MXP Foo::Moops / });
 
 select($was);
 
