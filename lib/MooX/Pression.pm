@@ -375,7 +375,7 @@ sub _handle_factory_keyword {
 	
 	my $optim;
 	for my $attr (@$attrs) {
-		$optim = 1 if $attr =~ /^:optim\b/;
+		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
 	
 	if ($via) {
@@ -415,7 +415,7 @@ sub _handle_method_keyword {
 	
 	my $optim;
 	for my $attr (@$attrs) {
-		$optim = 1 if $attr =~ /^:optim\b/;
+		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
 	
 	if (defined $name) {
@@ -475,7 +475,7 @@ sub _handle_multimethod_keyword {
 	my $optim;
 	my $extra_code = '';
 	for my $attr (@$attrs) {
-		$optim = 1 if $attr =~ /^:optim\b/;
+		$optim = 1 if $attr =~ /^:optimize\b/;
 		$extra_code .= sprintf('alias=>%s', B::perlstring($1)) if $attr =~ /^:alias\((.+)\)$/;
 	}
 	
@@ -509,7 +509,7 @@ sub _handle_modifier_keyword {
 
 	my $optim;
 	for my $attr (@$attrs) {
-		$optim = 1 if $attr =~ /^:optim\b/;
+		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
 
 	if ($has_sig) {
