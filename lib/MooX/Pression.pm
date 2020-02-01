@@ -12,7 +12,7 @@ use feature ();
 package MooX::Pression;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.017';
+our $VERSION   = '0.018';
 
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
@@ -1089,7 +1089,7 @@ sub _modifier {
 #{
 #	package MooX::Pression::Anonymous::Package;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.017';
+#	our $VERSION   = '0.018';
 #	use overload q[""] => sub { ${$_[0]} }, fallback => 1;
 #	sub DESTROY {}
 #	sub AUTOLOAD {
@@ -1100,7 +1100,7 @@ sub _modifier {
 #	
 #	package MooX::Pression::Anonymous::Class;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.017';
+#	our $VERSION   = '0.018';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub new {
 #		my $me = shift;
@@ -1113,12 +1113,12 @@ sub _modifier {
 #	
 #	package MooX::Pression::Anonymous::Role;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.017';
+#	our $VERSION   = '0.018';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	
 #	package MooX::Pression::Anonymous::ParameterizableClass;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.017';
+#	our $VERSION   = '0.018';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
@@ -1132,7 +1132,7 @@ sub _modifier {
 #
 #	package MooX::Pression::Anonymous::ParameterizableRole;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.017';
+#	our $VERSION   = '0.018';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;

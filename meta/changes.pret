@@ -135,3 +135,11 @@
 	changeset [
 		item "Method signatures in `requires` are no longer totally ignored."^^Change;
 	].
+
+
+`MooX-Pression 0.018 cpan:TOBYINK`
+	issued  2020-02-01;
+	changeset [
+		item "Fix handling of :optimize."^^Bugfix;
+		item "Include Dios in benchmarking comparison."^^Documentation;
+	].
