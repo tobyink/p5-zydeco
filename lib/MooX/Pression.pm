@@ -663,7 +663,7 @@ sub _handle_requires_keyword {
 			'q[%s]->_modifier(q(around), %s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
-			B::perlstring('sub { my $next = shift; goto $next }'),
+			'sub { my $next = shift; goto $next }',
 			!!$signature_is_named,
 			$type_params_stuff,
 			1,
