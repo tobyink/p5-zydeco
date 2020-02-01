@@ -55,7 +55,7 @@ if (STRICT) {
 
 else {
 	is( $Class->new->xyzzy(4), 4 );
-	is( $Class->new->xyzzy(1.1), 1.1 );	
+	is( $Class->new->xyzzy(1.1), 1.1 );
 }
 
 done_testing;
