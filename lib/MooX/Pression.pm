@@ -668,7 +668,6 @@ sub _handle_requires_keyword {
 			$type_params_stuff,
 			1,
 		);
-		warn ">>> $r2";
 	}
 	"$r1$r2";
 }
