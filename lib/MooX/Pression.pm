@@ -216,7 +216,7 @@ my $handle_signature_list = sub {
 			$parsed[-1]{type}          = $type;
 			$parsed[-1]{type_is_block} = 1;
 			$sig =~ s/^\Q$type//xs;
-			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xso;
 		}
 		elsif ($sig =~ /^(
 			~?(?&PerlBareword)(?&PerlAnonymousArray)?
@@ -237,7 +237,7 @@ my $handle_signature_list = sub {
 			$parsed[-1]{type}          = $type;
 			$parsed[-1]{type_is_block} = 0;
 			$sig =~ s/^\Q$type//xs;
-			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xso;
 		}
 		else {
 			$parsed[-1]{type} = 'Any';
@@ -249,7 +249,7 @@ my $handle_signature_list = sub {
 			$parsed[-1]{name} = $name;
 			++$seen_named;
 			$sig =~ s/^\*\Q$name//xs;
-			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xso;
 		}
 		elsif ($sig =~ /^((?&PerlVariable)) $PPR::GRAMMAR/xso) {
 			my $name = $1;
@@ -261,13 +261,13 @@ my $handle_signature_list = sub {
 		
 		if ($sig =~ /^\?/) {
 			$parsed[-1]{optional} = 1;
-			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
+			$sig =~ s/^\?((?&PerlOWS)) $PPR::GRAMMAR//xso;
 		}
 		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlTerm)) $PPR::GRAMMAR/xso) {
 			my ($ws, $default) = ($1, $2);
 			$parsed[-1]{default} = $default;
 			$sig =~ s/^=\Q$ws$default//xs;
-			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xso;
 		}
 		
 		if ($sig) {
