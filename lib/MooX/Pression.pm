@@ -1992,14 +1992,14 @@ a type constraint.
     # comment here is okay
     Person
     # comment here is fine too
-    $partner
+    *partner
     # and here
   ) { ... }
 
   method marry (
     Person # comment here is not okay!
            | Horse
-    $partner
+    *partner
   ) { ... }
 
 As with signature-free methods, C<< $self >> and C<< $class >> wll be
