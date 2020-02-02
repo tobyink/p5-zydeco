@@ -762,94 +762,94 @@ sub import {
 	
 	# `class` keyword
 	#
-	keyword class ('+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword class ('+'? $plus, QualifiedIdentifier $name, '(', SignatureList? $sig, ')', Block $block)
 	:desc(parameterizable class) :prefer {
-		my $return = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig,  $plus, \%opts);
+		my $return = $me->_handle_package_keyword(class => $name, $block, 1, $sig,  $plus, \%opts);
 	}
 	keyword class ('+'? $plus, QualifiedIdentifier $name, Block $block)
 	:desc(class) :prefer {
-		my $return = $me->_handle_package_keyword(class => $name, $block, 0,        undef, $plus, \%opts);
+		my $return = $me->_handle_package_keyword(class => $name, $block, 0, undef, $plus, \%opts);
 	}
 	keyword class ('+'? $plus, QualifiedIdentifier $name)
 	:desc(class) :prefer {
-		my $return = $me->_handle_package_keyword(class => $name, '',     0,        undef, $plus, \%opts);
+		my $return = $me->_handle_package_keyword(class => $name, '',     0, undef, $plus, \%opts);
 	}
-	keyword class ('(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword class ('(', SignatureList? $sig, ')', Block $block)
 	:desc(anonymous parameterizable class) {
-		my $return = $me->_handle_package_keyword(class => undef, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(class => undef, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword class (Block? $block)
 	:desc(anonymous class) {
-		my $return = $me->_handle_package_keyword(class => undef, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(class => undef, $block, 0, undef, '',    \%opts);
 	}
 
 	# `abstract` keyword
 	#
-	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, '(', SignatureList? $sig, ')', Block $block)
 	:desc(parameterizable abstract class) :prefer {
-		my $return = $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig,  $plus, \%opts);
+		my $return = $me->_handle_package_keyword(abstract => $name, $block, 1, $sig,  $plus, \%opts);
 	}
 	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, Block $block)
 	:desc(abstract class) :prefer {
-		my $return = $me->_handle_package_keyword(abstract => $name, $block, 0,        undef, $plus, \%opts);
+		my $return = $me->_handle_package_keyword(abstract => $name, $block, 0, undef, $plus, \%opts);
 	}
 	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name)
 	:desc(abstract class) :prefer {
-		my $return = $me->_handle_package_keyword(abstract => $name, '',     0,        undef, $plus, \%opts);
+		my $return = $me->_handle_package_keyword(abstract => $name, '',     0, undef, $plus, \%opts);
 	}
-	keyword abstract ('class', '(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword abstract ('class', '(', SignatureList? $sig, ')', Block $block)
 	:desc(anonymous parameterizable abstract class) {
-		my $return = $me->_handle_package_keyword(abstract => undef, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(abstract => undef, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword abstract ('class', Block? $block)
 	:desc(anonymous abstract class) {
-		my $return = $me->_handle_package_keyword(abstract => undef, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(abstract => undef, $block, 0, undef, '',    \%opts);
 	}
 
 	# `role` keyword
 	#
-	keyword role (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword role (QualifiedIdentifier $name, '(', SignatureList? $sig, ')', Block $block)
 	:desc(parameterizable role) :prefer {
-		my $return = $me->_handle_package_keyword(role => $name, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(role => $name, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword role (QualifiedIdentifier $name, Block $block)
 	:desc(role) :prefer {
-		my $return = $me->_handle_package_keyword(role => $name, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(role => $name, $block, 0, undef, '',    \%opts);
 	}
 	keyword role (QualifiedIdentifier $name)
 	:desc(role) :prefer {
-		my $return = $me->_handle_package_keyword(role => $name, '',     0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(role => $name, '',     0, undef, '',    \%opts);
 	}
-	keyword role ('(' $has_sig, SignatureList? $sig, ')', Block $block)
+	keyword role ('(', SignatureList? $sig, ')', Block $block)
 	:desc(anonymous parameterizable role) {
-		my $return = $me->_handle_package_keyword(role => undef, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(role => undef, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword role (Block? $block)
 	:desc(anonymouse role) {
-		my $return = $me->_handle_package_keyword(role => undef, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(role => undef, $block, 0, undef, '',    \%opts);
 	}
 
 	# `interface` keyword
 	#
 	keyword interface (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
 	:desc(parameterizable interface) :prefer {
-		my $return = $me->_handle_package_keyword(interface => $name, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(interface => $name, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword interface (QualifiedIdentifier $name, Block $block)
 	:desc(interface) :prefer {
-		my $return = $me->_handle_package_keyword(interface => $name, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(interface => $name, $block, 0, undef, '',    \%opts);
 	}
 	keyword interface (QualifiedIdentifier $name)
 	:desc(interface) :prefer {
-		my $return = $me->_handle_package_keyword(interface => $name, '',     0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(interface => $name, '',     0, undef, '',    \%opts);
 	}
 	keyword interface ('(' $has_sig, SignatureList? $sig, ')', Block $block)
 	:desc(anonymous parameterizable interface) {
-		my $return = $me->_handle_package_keyword(interface => undef, $block, $has_sig, $sig,  '',    \%opts);
+		my $return = $me->_handle_package_keyword(interface => undef, $block, 1, $sig,  '',    \%opts);
 	}
 	keyword interface (Block? $block)
 	:desc(anonymous interface) {
-		my $return = $me->_handle_package_keyword(interface => undef, $block, 0,        undef, '',    \%opts);
+		my $return = $me->_handle_package_keyword(interface => undef, $block, 0, undef, '',    \%opts);
 	}
 
 	# `toolkit` keyword
@@ -947,56 +947,56 @@ sub import {
 	
 	# `method` keyword
 	#
-	keyword method (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method) :prefer {
-		$me->_handle_method_keyword($name, $code, $has_sig, $sig, \@attrs);
+	keyword method (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(method) :prefer {
+		$me->_handle_method_keyword($name, $code, 1, $sig,  \@attrs);
 	}
 	keyword method (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method) :prefer {
-		$me->_handle_method_keyword($name, $code, undef, undef, \@attrs);
+		$me->_handle_method_keyword($name, $code, 0, undef, \@attrs);
 	}
-	keyword method (                        MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(anonymous method) {
-		$me->_handle_method_keyword(undef, $code, $has_sig, $sig, \@attrs);
+	keyword method (                        MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(anonymous method) {
+		$me->_handle_method_keyword(undef, $code, 1, $sig,  \@attrs);
 	}
 	keyword method (                        MyAttribute? @attrs, Block $code) :desc(anonymous method) {
-		$me->_handle_method_keyword(undef, $code, undef, undef, \@attrs);
+		$me->_handle_method_keyword(undef, $code, 0, undef, \@attrs);
 	}
 
 	# `multi method` keyword
 	#
-	keyword multi ('method', Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(multimethod) {
-		$me->_handle_multimethod_keyword($name, $code, $has_sig, $sig, \@attrs);
+	keyword multi ('method', Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(multimethod) {
+		$me->_handle_multimethod_keyword($name, $code, 1, $sig,  \@attrs);
 	}
 	keyword multi ('method', Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(multimethod) {
-		$me->_handle_multimethod_keyword($name, $code, undef, undef, \@attrs);
+		$me->_handle_multimethod_keyword($name, $code, 0, undef, \@attrs);
 	}
 
 	# `before`, `after`, and `around` keywords
 	#
-	keyword before (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(before => $name, $code, $has_sig, $sig, \@attrs);
+	keyword before (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(method modifier) {
+		$me->_handle_modifier_keyword(before => $name, $code, 1, $sig,  \@attrs);
 	}
 	keyword before (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(before => $name, $code, undef, undef, \@attrs);
+		$me->_handle_modifier_keyword(before => $name, $code, 0, undef, \@attrs);
 	}
-	keyword after (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(after => $name, $code, $has_sig, $sig, \@attrs);
+	keyword after (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(method modifier) {
+		$me->_handle_modifier_keyword(after => $name, $code, 1, $sig,  \@attrs);
 	}
 	keyword after (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(after => $name, $code, undef, undef, \@attrs);
+		$me->_handle_modifier_keyword(after => $name, $code, 0, undef, \@attrs);
 	}
-	keyword around (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(around => $name, $code, $has_sig, $sig, \@attrs);
+	keyword around (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(method modifier) {
+		$me->_handle_modifier_keyword(around => $name, $code, 1, $sig,  \@attrs);
 	}
 	keyword around (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method modifier) {
-		$me->_handle_modifier_keyword(around => $name, $code, undef, undef, \@attrs);
+		$me->_handle_modifier_keyword(around => $name, $code, 0, undef, \@attrs);
 	}
 	
 	# `factory` keyword
 	#
-	keyword factory (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(factory method) {
-		$me->_handle_factory_keyword($name, undef, $code, $has_sig, $sig, \@attrs);
+	keyword factory (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(factory method) {
+		$me->_handle_factory_keyword($name, undef, $code, 1, $sig,  \@attrs);
 	}
 	keyword factory (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(factory method) {
-		$me->_handle_factory_keyword($name, undef, $code, undef, undef,  \@attrs);
+		$me->_handle_factory_keyword($name, undef, $code, 0, undef,  \@attrs);
 	}
 	keyword factory (Identifier|Block $name, 'via', Identifier $via) :desc(proxy factory method) {
 		$me->_handle_factory_keyword($name, $via, undef, undef, undef, []);
