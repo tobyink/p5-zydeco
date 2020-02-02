@@ -138,28 +138,56 @@ BEGIN {
 
 keytype SignatureList is /
 	(
-		(?&PerlBlock) | ([^\W0-9]\S*)
+		(?&PerlBlock) | (
+			~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			(
+				(?&PerlOWS)\&(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			)*
+			(
+				(?&PerlOWS)\|(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				(
+					(?&PerlOWS)\&(?&PerlOWS)
+					~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				)*
+			)*
+		)
 	)?
-	\s*
+	(?&PerlOWS)
 	(
 		(?&PerlVariable) | (\*(?&PerlIdentifier))
 	)
 	(
-		\? | (\s*=\s*(?&PerlTerm))
+		\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlTerm))
 	)?
 	(
-		\s*
+		(?&PerlOWS)
 		,
-		\s*
+		(?&PerlOWS)
 		(
-			(?&PerlBlock) | ([^\W0-9]\S*)
+			(?&PerlBlock) | (
+			~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			(
+				\&
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			)*
+			(
+				\|
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				(
+					\&
+					~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				)*
+			)*
+		)
 		)?
-		\s*
+		(?&PerlOWS)
 		(
 			(?&PerlVariable) | (\*(?&PerlIdentifier))
 		)
 		(
-			\? | (\s*=\s*(?&PerlTerm))
+			\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlTerm))
 		)?
 	)*
 /xs;  # fix for highlighting /
@@ -188,14 +216,28 @@ my $handle_signature_list = sub {
 			$parsed[-1]{type}          = $type;
 			$parsed[-1]{type_is_block} = 1;
 			$sig =~ s/^\Q$type//xs;
-			$sig =~ s/^\s+//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
-		elsif ($sig =~ /^([^\W0-9]\S*)/) {
+		elsif ($sig =~ /^(
+			~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			(
+				(?&PerlOWS)\&(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			)*
+			(
+				(?&PerlOWS)\|(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				(
+					(?&PerlOWS)\&(?&PerlOWS)
+					~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				)*
+			)*
+		) $PPR::GRAMMAR/xso) {
 			my $type = $1;
 			$parsed[-1]{type}          = $type;
 			$parsed[-1]{type_is_block} = 0;
 			$sig =~ s/^\Q$type//xs;
-			$sig =~ s/^\s+//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
 		else {
 			$parsed[-1]{type} = 'Any';
@@ -207,30 +249,30 @@ my $handle_signature_list = sub {
 			$parsed[-1]{name} = $name;
 			++$seen_named;
 			$sig =~ s/^\*\Q$name//xs;
-			$sig =~ s/^\s+//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
 		elsif ($sig =~ /^((?&PerlVariable)) $PPR::GRAMMAR/xso) {
 			my $name = $1;
 			$parsed[-1]{name} = $name;
 			++$seen_pos;
 			$sig =~ s/^\Q$name//xs;
-			$sig =~ s/^\s+//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
 		
 		if ($sig =~ /^\?/) {
 			$parsed[-1]{optional} = 1;
-			$sig =~ s/^\?\s*//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
-		elsif ($sig =~ /^=\s*((?&PerlTerm)) $PPR::GRAMMAR/xso) {
-			my $default = $1;
+		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlTerm)) $PPR::GRAMMAR/xso) {
+			my ($ws, $default) = ($1, $2);
 			$parsed[-1]{default} = $default;
-			$sig =~ s/^=\s*\Q$default//xs;
-			$sig =~ s/^\s+//xs;
+			$sig =~ s/^=\Q$ws$default//xs;
+			$sig =~ s/^((?&PerlOWS)) $PPR::GRAMMAR//xs;
 		}
 		
 		if ($sig) {
 			$sig =~ /^,/ or die "WEIRD SIGNATURE??? $sig";
-			$sig =~ s/,\s*//xs;
+			$sig =~ s/^,//;
 		}
 	}
 	
@@ -1922,13 +1964,15 @@ The syntax for each named argument is:
 
   Type *name = default
 
-The type is a type name. It must start with a word character (but not a
-digit) and continues until whitespace is seen. Whitespace is not
-currently permitted in the type. (Parsing is a little naive right now.)
+The type is a type name, which will be parsed using L<Type::Parser>.
+(So it can include the C<< ~ >>, C<< | >>, and C<< & >>, operators,
+and can include parameters in C<< [ ] >> brackets. Type::Parser can
+handle whitespace in the type, but not comments.
 
-Alternatively, you can provide a block which returns a type name or
-returns a blessed Type::Tiny object. (And the block can contain
-whitespace!)
+Alternatively, you can provide a block which returns a type name as a string
+or returns a blessed Type::Tiny object. For very complex types, where you're
+expressing additional coercions or value constraints, this is probably what
+you want.
 
 The asterisk indicates that the argument is named, not positional.
 
@@ -1940,6 +1984,23 @@ argument.
   }
 
 Or it may be followed by an equals sign to set a default value.
+
+Comments may be included in the signature, but not in the middle of
+a type constraint.
+
+  method marry (
+    # comment here is okay
+    Person
+    # comment here is fine too
+    $partner
+    # and here
+  ) { ... }
+
+  method marry (
+    Person # comment here is not okay!
+           | Horse
+    $partner
+  ) { ... }
 
 As with signature-free methods, C<< $self >> and C<< $class >> wll be
 defined for you in the body of the method. However, when a signature
@@ -2935,25 +2996,6 @@ Please report any bugs to
 L<http://rt.cpan.org/Dist/Display.html?Queue=MooX-Pression>.
 
 =head1 TODO
-
-=head2 Better type constraint parsing
-
-Better parsing for type constraints would be good. Right now, type
-constraints are parsed from the signature by looking for a non-numeric
-word character and grabbing everything up to the first whitespace character.
-
-A good grammar for type constraints would be something like: types can
-Perl (possibly qualified) identifiers (like "Foo" or "Foo::Bar"). They
-can be optionally prefixed with "~", optionally suffixed with "[...]",
-combined with "|" and "&" infix operators, and may use parentheses to
-express precedence. The grammar for the contents of the square brackets
-is that it's a list separated by commas and/or fat commas. List items
-may be strings, numbers, quoted regexps, or other type constraints.
-(Those other type constraints can themselves have things like infix
-operators, "[...]", etc.)
-
-The regexp doesn't really need to break down all the components; just
-figure out where it ends, so the type can be passed to L<Type::Parser>.
 
 =head2 Plugin system
 
