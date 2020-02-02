@@ -149,3 +149,11 @@
 		item "Much improved parsing of signatures; especially type constraints within signatures."^^Change;
 		item "Include Mouse in benchmarking comparison."^^Documentation;
 	].
+
+`MooX-Pression 0.020 cpan:TOBYINK`
+	issued  2020-02-02;
+	changeset [
+		item "Fix issue parsing optional parameters introduced in 0.019."^^Bugfix;
+		item "Better messages when encountering syntax errors."^^Change;
+		item "In some cases of otherwise ambiguous syntax, assume classes/roles/methods were not anonymous."^^Change;
+	].
