@@ -763,15 +763,15 @@ sub import {
 	# `class` keyword
 	#
 	keyword class ('+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
-	:desc(parameterizable class) {
+	:desc(parameterizable class) :prefer {
 		my $return = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig,  $plus, \%opts);
 	}
 	keyword class ('+'? $plus, QualifiedIdentifier $name, Block $block)
-	:desc(class) {
+	:desc(class) :prefer {
 		my $return = $me->_handle_package_keyword(class => $name, $block, 0,        undef, $plus, \%opts);
 	}
 	keyword class ('+'? $plus, QualifiedIdentifier $name)
-	:desc(class) {
+	:desc(class) :prefer {
 		my $return = $me->_handle_package_keyword(class => $name, '',     0,        undef, $plus, \%opts);
 	}
 	keyword class ('(' $has_sig, SignatureList? $sig, ')', Block $block)
@@ -786,15 +786,15 @@ sub import {
 	# `abstract` keyword
 	#
 	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
-	:desc(parameterizable abstract class) {
+	:desc(parameterizable abstract class) :prefer {
 		my $return = $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig,  $plus, \%opts);
 	}
 	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, Block $block)
-	:desc(abstract class) {
+	:desc(abstract class) :prefer {
 		my $return = $me->_handle_package_keyword(abstract => $name, $block, 0,        undef, $plus, \%opts);
 	}
 	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name)
-	:desc(abstract class) {
+	:desc(abstract class) :prefer {
 		my $return = $me->_handle_package_keyword(abstract => $name, '',     0,        undef, $plus, \%opts);
 	}
 	keyword abstract ('class', '(' $has_sig, SignatureList? $sig, ')', Block $block)
@@ -809,15 +809,15 @@ sub import {
 	# `role` keyword
 	#
 	keyword role (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
-	:desc(parameterizable role) {
+	:desc(parameterizable role) :prefer {
 		my $return = $me->_handle_package_keyword(role => $name, $block, $has_sig, $sig,  '',    \%opts);
 	}
 	keyword role (QualifiedIdentifier $name, Block $block)
-	:desc(role) {
+	:desc(role) :prefer {
 		my $return = $me->_handle_package_keyword(role => $name, $block, 0,        undef, '',    \%opts);
 	}
 	keyword role (QualifiedIdentifier $name)
-	:desc(role) {
+	:desc(role) :prefer {
 		my $return = $me->_handle_package_keyword(role => $name, '',     0,        undef, '',    \%opts);
 	}
 	keyword role ('(' $has_sig, SignatureList? $sig, ')', Block $block)
@@ -832,15 +832,15 @@ sub import {
 	# `interface` keyword
 	#
 	keyword interface (QualifiedIdentifier $name, '(' $has_sig, SignatureList? $sig, ')', Block $block)
-	:desc(parameterizable interface) {
+	:desc(parameterizable interface) :prefer {
 		my $return = $me->_handle_package_keyword(interface => $name, $block, $has_sig, $sig,  '',    \%opts);
 	}
 	keyword interface (QualifiedIdentifier $name, Block $block)
-	:desc(interface) {
+	:desc(interface) :prefer {
 		my $return = $me->_handle_package_keyword(interface => $name, $block, 0,        undef, '',    \%opts);
 	}
 	keyword interface (QualifiedIdentifier $name)
-	:desc(interface) {
+	:desc(interface) :prefer {
 		my $return = $me->_handle_package_keyword(interface => $name, '',     0,        undef, '',    \%opts);
 	}
 	keyword interface ('(' $has_sig, SignatureList? $sig, ')', Block $block)
@@ -947,10 +947,10 @@ sub import {
 	
 	# `method` keyword
 	#
-	keyword method (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method) {
+	keyword method (Identifier|Block $name, MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(method) :prefer {
 		$me->_handle_method_keyword($name, $code, $has_sig, $sig, \@attrs);
 	}
-	keyword method (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method) {
+	keyword method (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method) :prefer {
 		$me->_handle_method_keyword($name, $code, undef, undef, \@attrs);
 	}
 	keyword method (                        MyAttribute? @attrs, '(' $has_sig, SignatureList? $sig, ')', Block $code) :desc(anonymous method) {
