@@ -3024,6 +3024,9 @@ fine with them, but some things won't work, like plugins that rely on
 being able to wrap C<has>. So it would be nice to have a plugin system
 that extensions can hook into.
 
+If you're interested in extending MooX::Pression, file a bug report about
+it and let's have a conversation about the best way for that to happen.
+
 =head1 SEE ALSO
 
 Less magic version:
