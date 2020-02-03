@@ -1267,10 +1267,7 @@ MyApp.pm
   use warnings;
   
   package MyApp {
-    use MooX::Pression (
-      version    => 0.1,
-      authority  => 'cpan:MYPAUSEID',
-    );
+    use MooX::Pression;
     
     class Person {
       has name   ( type => Str, required => true );
