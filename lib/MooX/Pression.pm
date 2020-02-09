@@ -15,9 +15,78 @@ our $AUTHORITY = 'cpan:TOBYINK';
 our $VERSION   = '0.020';
 
 use Keyword::Declare;
+use Keyword::Simple;
+use PPR;
+use re 'eval';
 use B::Hooks::EndOfScope;
 use Exporter::Shiny our @EXPORT = qw( version authority overload );
 use Devel::StrictMode qw(STRICT);
+
+use MooX::Press (
+	'class:Token' => {
+		has => [
+			name     => { required => 1, type => 'Str' },
+			pattern  => { required => 1, type => 'Str|RegexpRef' },
+			arity    => { required => 0, type => 'Str', default => '' },
+		],
+		coerce => [
+			'ArrayRef', 'from_arrayref', sub {
+				my $class = shift;
+				(@$_==3)
+					? $class->new(name => $_->[0], pattern => $_->[1], arity => $_->[2])
+					: $class->new(name => $_->[0], pattern => $_->[1]);
+			},
+		],
+	},
+	'class:Syntax' => {
+		has => [
+			qw( description ),
+			handler => { required => 1, type => 'CodeRef' },
+			tokens  => { required => 1, type => 'ArrayRef[Token]' },
+			regexp  => { is => 'lazy', builder => sub {
+				my $self   = shift;
+				my $regexp_str = join(
+					'(?&PerlOWS)',
+					q(), map {
+						my $token   = $_;
+						my $name    = $token->name;
+						my $pattern = $token->pattern;
+						$name
+							? (
+								($token->arity eq '@')
+									? sprintf('(?:(?<%s>(?:%s))(?{push @{$_{%s}},$+{%s}}))', $name, $pattern, $name, $name)
+									: sprintf('(?<%s>(?:%s))', $name, $pattern)
+							)
+							: sprintf('(?:%s)', $pattern)
+					} @{ $self->tokens },
+				);
+				qr/ $regexp_str $PPR::GRAMMAR /x;
+			}},
+		],
+		can => [
+			handle_string => sub {
+				my ($self, $ref) = @_;
+				my $re = $self->regexp;
+				local %_;
+				if ($$ref =~ /^$re/) {
+					my %captures = (%+, %_);
+					$self->handler->($self, \%captures);
+					return 1;
+				}
+				else {
+					warn "nah fam";
+				}
+				return;
+			},
+		],
+	},
+	'class:Keyword' => {
+		has => [
+			qw( name! ),
+			syntax_variants => { required => 1, type => 'ArrayRef[Syntax]' },
+		],
+	},
+);
 
 BEGIN {
 	package MooX::Pression::_Gather;
@@ -762,6 +831,29 @@ sub import {
 	
 	# `class` keyword
 	#
+	
+	my $SignatureList = qr/ foo /x;
+	
+	use Data::Dumper;
+	my $kw = $me->new_keyword(
+		name        => 'class',
+		syntax_variants => [
+			$me->new_syntax(
+				description => 'simple class',
+				tokens      => [
+					[ plus  => '\+?'],
+					[ name  => '(?&PerlQualifiedIdentifier)' ],
+					[ block => '(?&PerlBlock)' ],
+				],
+				handler => sub {
+					print Dumper(pop);
+				},
+			),
+		],
+	);
+	
+	$kw->syntax_variants->[0]->handle_string(\'Foo::Bar { 1 }');
+	
 	keyword class ('+'? $plus, QualifiedIdentifier $name, '(', SignatureList? $sig, ')', Block $block)
 	:desc(parameterizable class) :prefer {
 		my $return = $me->_handle_package_keyword(class => $name, $block, 1, $sig,  $plus, \%opts);
