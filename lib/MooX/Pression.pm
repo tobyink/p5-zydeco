@@ -768,15 +768,15 @@ sub import {
 		
 		$$ref =~ /^
 			(?&PerlOWS)
-			(?<plus> \+ )?
+			(?<plus> [+] )?
 			(?<name> (?&PerlQualifiedIdentifier) )?
 			(?&PerlOWS)
 			(?:
-				\(
+				[(]
 					(?&PerlOWS)
 					(?<sig> (?:$RE_SignatureList) )
 					(?&PerlOWS)
-				\)
+				[)]
 			)?
 			(?&PerlOWS)
 			(?<block> (?&PerlBlock) )
@@ -815,6 +815,7 @@ sub import {
 		$block ||= '{}';
 		
 		substr($$ref, 0, $pos) = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts);
+		warn "HERE [[$$ref]]";
 	};
 
 	Keyword::Simple::define abstract => sub {
@@ -1085,10 +1086,11 @@ sub import {
 					(?&PerlOWS)
 				\)
 			)?
+			(?&PerlOWS)
 			(?:
-				\=
+				[=]
 				(?&PerlOWS)
-				(?<default> (?&PerlListElem) )
+				(?<default> (?&PerlAssignment) )
 			)?
 			(?&PerlOWS)
 			$PPR::GRAMMAR
@@ -1134,21 +1136,48 @@ sub import {
 		substr($$ref, 0, $pos) = sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr);
 	};
 	
-#	# `method` keyword
-#	#
-#	keyword method (Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(method) :prefer {
-#		$me->_handle_method_keyword($name, $code, 1, $sig,  \@attrs);
-#	}
-#	keyword method (Identifier|Block $name, MyAttribute? @attrs, Block $code) :desc(method) :prefer {
-#		$me->_handle_method_keyword($name, $code, 0, undef, \@attrs);
-#	}
-#	keyword method (                        MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(anonymous method) {
-#		$me->_handle_method_keyword(undef, $code, 1, $sig,  \@attrs);
-#	}
-#	keyword method (                        MyAttribute? @attrs, Block $code) :desc(anonymous method) {
-#		$me->_handle_method_keyword(undef, $code, 0, undef, \@attrs);
-#	}
-#
+	# `method` keyword
+	#
+	Keyword::Simple::define method => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			(?<name> (?&PerlIdentifier)|(?&PerlBlock) )?
+			(?&PerlOWS)
+			(?<attributes> ( $RE_MyAttribute (?&PerlOWS) )+ )?
+			(?&PerlOWS)
+			(?:
+				\(
+					(?&PerlOWS)
+					(?<sig> (?:$RE_SignatureList) )
+					(?&PerlOWS)
+				\)
+			)?
+			(?&PerlOWS)
+			(?<code> (?&PerlBlock) )
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs or $me->_syntax_error(
+			'method declaration',
+			'method <name> <attributes> (<signature>) { <block> }',
+			'method <name> (<signature>) { <block> }',
+			'method <name> <attributes> { <block> }',
+			'method <name> { <block> }',
+			'method <attributes> (<signature>) { <block> }',
+			'method (<signature>) { <block> }',
+			'method <attributes> { <block> }',
+			'method { <block> }',
+			$ref,
+		);
+		
+		my ($pos, $name, $attributes, $sig, $code) = ($+[0], $+{name}, $+{attributes}, $+{sig}, $+{code});
+		my $has_sig = !!exists $+{sig};
+		my @attrs   = ( ($attributes||'') =~ /$RE_MyAttribute/g );
+		
+		substr($$ref, 0, $pos) = 'warn "GOT HERE";'.$me->_handle_method_keyword($name, $code, $has_sig, $sig,  \@attrs) . ';warn "AND HERE";';
+	};
+	
 #	# `multi method` keyword
 #	#
 #	keyword multi ('method', Identifier|Block $name, MyAttribute? @attrs, '(', SignatureList? $sig, ')', Block $code) :desc(multimethod) {
@@ -1263,6 +1292,9 @@ sub _package_callback {
 	my $cb = shift;
 	local %OPTS = ();
 	&$cb;
+#	use Data::Dumper;
+#	$Data::Dumper::Deparse = 1;
+#	print "OPTS:".Dumper $cb, +{ %OPTS };
 	return +{ %OPTS };
 }
 sub _has {
