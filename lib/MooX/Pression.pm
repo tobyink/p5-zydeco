@@ -14,6 +14,8 @@ package MooX::Pression;
 our $AUTHORITY = 'cpan:TOBYINK';
 our $VERSION   = '0.020';
 
+use Keyword::Simple ();
+use PPR;
 use Keyword::Declare;
 use B::Hooks::EndOfScope;
 use Exporter::Shiny our @EXPORT = qw( version authority overload );
@@ -192,6 +194,62 @@ keytype SignatureList is /
 	)*
 /xs;  # fix for highlighting /
 
+my $RE_SignatureList = q/
+	(
+		(?&PerlBlock) | (
+			~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			(
+				(?&PerlOWS)\&(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			)*
+			(
+				(?&PerlOWS)\|(?&PerlOWS)
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				(
+					(?&PerlOWS)\&(?&PerlOWS)
+					~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				)*
+			)*
+		)
+	)?
+	(?&PerlOWS)
+	(
+		(?&PerlVariable) | (\*(?&PerlIdentifier))
+	)
+	(
+		\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlTerm))
+	)?
+	(
+		(?&PerlOWS)
+		,
+		(?&PerlOWS)
+		(
+			(?&PerlBlock) | (
+			~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			(
+				\&
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+			)*
+			(
+				\|
+				~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				(
+					\&
+					~?(?&PerlBareword)(?&PerlAnonymousArray)?
+				)*
+			)*
+		)
+		)?
+		(?&PerlOWS)
+		(
+			(?&PerlVariable) | (\*(?&PerlIdentifier))
+		)
+		(
+			\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlTerm))
+		)?
+	)*
+/;
+
 my $handle_signature_list = sub {
 	my $sig = $_[0];
 	my $seen_named = 0;
@@ -351,6 +409,28 @@ keytype RoleList is /
 	)*
 /xs;  #/*
 
+my $RE_RoleList = q/
+	\s*
+	(
+		(?&PerlBlock) | (?&PerlQualifiedIdentifier)
+	)
+	(
+		(?:\s*\?) | (?&PerlList)
+	)?
+	(
+		\s*
+		,
+		\s*
+		\+?\s*
+		(
+			(?&PerlBlock) | (?&PerlQualifiedIdentifier)
+		)
+		(
+			(?:\s*\?) | (?&PerlList)
+		)?
+	)*
+/;
+
 my $handle_role_list = sub {
 	my ($rolelist, $kind) = @_;
 	my @return;
@@ -411,6 +491,8 @@ my $handle_role_list = sub {
 };
 
 keytype MyAttribute is /:[^\W0-9]\w*(?:\([^\)]+\))?/xs;
+
+my $RE_MyAttribute = q/:[^\W0-9]\w*(?:\([^\)]+\))?/;
 
 sub _handle_factory_keyword {
 	my ($me, $name, $via, $code, $has_sig, $sig, $attrs) = @_;
@@ -878,39 +960,117 @@ sub import {
 	
 	# `begin` and `end` keywords
 	#
-	keyword begin (Block $code) :desc(begin hook) {
-		sprintf('q[%s]->_begin(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $code);
-	}
-	keyword end (Block $code) :desc(end hook) {
-		sprintf('q[%s]->_end(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $code);
+	for my $kw (qw/ begin end /) {
+		Keyword::Simple::define $kw => sub {
+			my $ref = shift;
+			
+			$$ref =~ /^
+				(?&PerlOWS)
+				((?&PerlBlock))
+				(?&PerlOWS)
+				$PPR::GRAMMAR
+			/xs or $me->_syntax_error(
+				"$kw block",
+				"$kw { <block> }",
+				$ref,
+			);
+			
+			my ($pos, $capture) = ($+[0], $1);
+			substr($$ref, 0, $pos) = sprintf('q[%s]->_begin(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $capture);
+		};
 	}
 	
 	# `type_name` keyword
 	#
-	keyword type_name (Identifier $tn) :desc(type_name statement) {
-		sprintf('q[%s]->_type_name(%s);', $me, B::perlstring($tn));
-	}
+	Keyword::Simple::define type_name => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			((?&PerlIdentifier))
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs or $me->_syntax_error(
+			'type name declaration',
+			'type_name <identifier>',
+			$ref,
+		);
+		
+		my ($pos, $capture) = ($+[0], $1);
+		substr($$ref, 0, $pos) = sprintf('q[%s]->_type_name(%s);', $me, B::perlstring($capture));
+	};
 	
 	# `extends` keyword
 	#
-	keyword extends (RoleList $parent) :desc(extends statement) {
-		sprintf('q[%s]->_extends(%s);', $me, $parent->$handle_role_list('class'));
-	}
+	Keyword::Simple::define extends => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			($RE_RoleList)
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs or $me->_syntax_error(
+			'extends declaration',
+			'extends <classes>',
+			$ref,
+		);
+		
+		my ($pos, $capture) = ($+[0], $1);
+		substr($$ref, 0, $pos) = sprintf('q[%s]->_extends(%s);', $me, $handle_role_list->($capture, 'class'));
+	};
 	
 	# `with` keyword
 	#
-	keyword with (RoleList $roles) :desc(with statement) {
-		sprintf('q[%s]->_with(%s);', $me, $roles->$handle_role_list('role'));
-	}
+	Keyword::Simple::define with => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			($RE_RoleList)
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs or $me->_syntax_error(
+			'with declaration',
+			'with <roles>',
+			$ref,
+		);
+		
+		my ($pos, $capture) = ($+[0], $1);
+		
+		substr($$ref, 0, $pos) = sprintf('q[%s]->_with(%s);', $me, $handle_role_list->($capture, 'role'));
+	};
 	
 	# `requires` keyword
 	#
-	keyword requires (Identifier|Block $name, '(' $has_sig, SignatureList? $sig, ')') :desc(requires statement) {
-		$me->_handle_requires_keyword("$name", $has_sig, $sig);
-	}
-	keyword requires (Identifier|Block $name) :desc(requires statement) {
-		$me->_handle_requires_keyword("$name", 0, undef);
-	}
+	Keyword::Simple::define requires => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			(?<name> (?&PerlIdentifier)|(?&PerlBlock) )
+			(?&PerlOWS)
+			(?:
+				\(
+					(?&PerlOWS)
+					(?<sig> (?:$RE_SignatureList) )
+					(?&PerlOWS)
+				\)
+			)?
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs
+		or $me->_syntax_error(
+			'requires declaration',
+			'requires <name> (<signature>)',
+			'requires <name>',
+			$ref,
+		);
+		
+		my ($pos, $name, $sig) = ($+[0], $+{name}, $+{sig});
+		my $has_sig = !!exists $+{sig};
+		substr($$ref, 0, $pos) = $me->_handle_requires_keyword($name, $has_sig, $sig)
+	};
 	
 	# `has` keyword
 	#
@@ -941,9 +1101,27 @@ sub import {
 	
 	# `constant` keyword
 	#
-	keyword constant (Identifier $name, '=', Expr $value) :desc(constant definition) {
-		sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $value);
-	}
+	Keyword::Simple::define constant => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			(?<name> (?&PerlIdentifier) )
+			(?&PerlOWS)
+			=
+			(?&PerlOWS)
+			(?<expr> (?&PerlExpression) )
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs or $me->_syntax_error(
+			'constant declaration',
+			'constant <name> = <value>',
+			$ref,
+		);
+		
+		my ($pos, $name, $expr) = ($+[0], $+{name}, $+{expr});		
+		substr($$ref, 0, $pos) = sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr);
+	};
 	
 	# `method` keyword
 	#
