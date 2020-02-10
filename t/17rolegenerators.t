@@ -5,7 +5,6 @@ use Test::More;
 package MyApp {
 	use MooX::Pression;
 	class Doggo {
-		warn "HERE";
 		with Generators::Species('dog', 'Canis familiaris'), GoodBoi?;
 	}
 	role Generators::Species (Str $common, Str $binomial) {
