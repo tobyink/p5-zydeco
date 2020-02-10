@@ -817,6 +817,64 @@ sub import {
 		substr($$ref, 0, $pos) = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts);
 	};
 
+	Keyword::Simple::define abstract => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			class
+			(?&PerlOWS)
+			(?<plus> \+ )?
+			(?<name> (?&PerlQualifiedIdentifier) )?
+			(?&PerlOWS)
+			(?:
+				\(
+					(?&PerlOWS)
+					(?<sig> (?:$RE_SignatureList) )
+					(?&PerlOWS)
+				\)
+			)?
+			(?&PerlOWS)
+			(?<block> (?&PerlBlock) )
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs
+		or $$ref =~ /^
+			(?&PerlOWS)
+			class
+			(?&PerlOWS)
+			(?<plus> \+ )?
+			(?<name> (?&PerlQualifiedIdentifier) )?
+			(?&PerlOWS)
+			(?:
+				\(
+					(?&PerlOWS)
+					(?<sig> (?:$RE_SignatureList) )
+					(?&PerlOWS)
+				\)
+			)?
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs
+		or $me->_syntax_error(
+			'abstract class declaration',
+			'abstract class <name> (<signature>) { <block> }',
+			'abstract class <name> { <block> }',
+			'abstract class <name>',
+			'abstract class (<signature>) { <block> }',
+			'abstract class { <block> }',
+			'abstract class;',
+			$ref,
+		);
+		
+		my ($pos, $plus, $name, $sig, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{block});
+		my $has_sig = !!exists $+{sig};
+		$plus  ||= '';
+		$block ||= '{}';
+		
+		substr($$ref, 0, $pos) = $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig, $plus, \%opts);
+	};
+
 	for my $kw (qw/ role interface /) {
 		Keyword::Simple::define $kw => sub {
 			my $ref = shift;
@@ -870,29 +928,6 @@ sub import {
 		};
 	}
 
-#	# `abstract` keyword
-#	#
-#	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, '(', SignatureList? $sig, ')', Block $block)
-#	:desc(parameterizable abstract class) :prefer {
-#		my $return = $me->_handle_package_keyword(abstract => $name, $block, 1, $sig,  $plus, \%opts);
-#	}
-#	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name, Block $block)
-#	:desc(abstract class) :prefer {
-#		my $return = $me->_handle_package_keyword(abstract => $name, $block, 0, undef, $plus, \%opts);
-#	}
-#	keyword abstract ('class', '+'? $plus, QualifiedIdentifier $name)
-#	:desc(abstract class) :prefer {
-#		my $return = $me->_handle_package_keyword(abstract => $name, '',     0, undef, $plus, \%opts);
-#	}
-#	keyword abstract ('class', '(', SignatureList? $sig, ')', Block $block)
-#	:desc(anonymous parameterizable abstract class) {
-#		my $return = $me->_handle_package_keyword(abstract => undef, $block, 1, $sig,  '',    \%opts);
-#	}
-#	keyword abstract ('class', Block? $block)
-#	:desc(anonymous abstract class) {
-#		my $return = $me->_handle_package_keyword(abstract => undef, $block, 0, undef, '',    \%opts);
-#	}
-#
 #	# `toolkit` keyword
 #	#
 #	keyword toolkit (Identifier $tk, '(', QualifiedIdentifier|Comma @imports, ')') :desc(toolkit statement) {
@@ -1031,32 +1066,49 @@ sub import {
 		substr($$ref, 0, $pos) = $me->_handle_requires_keyword($name, $has_sig, $sig)
 	};
 	
-#	# `has` keyword
-#	#
-#	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix) :desc(attribute definition) {
-#		$me->_handle_has_keyword("$plus$name$postfix", undef, undef);
-#	}
-#	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '(', List $spec, ')') :desc(attribute definition) {
-#		$me->_handle_has_keyword("$plus$name$postfix", $spec, undef);
-#	}
-#	keyword has (Block $name, '(', List $spec, ')') :desc(attribute definition) {
-#		$me->_handle_has_keyword($name, $spec, undef);
-#	}
-#	keyword has (Block $name) :desc(attribute definition) {
-#		$me->_handle_has_keyword($name, undef, undef);
-#	}
-#	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '=', ListElem $default) :desc(attribute definition) {
-#		$me->_handle_has_keyword("$plus$name$postfix", undef, $default);
-#	}
-#	keyword has ('+'? $plus, '*'?, Identifier $name, '!'? $postfix, '(', List $spec, ')', '=', ListElem $default) :desc(attribute definition) {
-#		$me->_handle_has_keyword("$plus$name$postfix", $spec, $default);
-#	}
-#	keyword has (Block $name, '(', List $spec, ')', '=', ListElem $default) :desc(attribute definition) {
-#		$me->_handle_has_keyword($name, $spec, $default);
-#	}
-#	keyword has (Block $name, '=', ListElem $default) :desc(attribute definition) {
-#		$me->_handle_has_keyword($name, undef, $default);
-#	}
+	# `has` keyword
+	#
+	Keyword::Simple::define has => sub {
+		my $ref = shift;
+		
+		$$ref =~ /^
+			(?&PerlOWS)
+			(?<plus> \+ )?
+			(?<asterisk> \* )?
+			(?<name> (?&PerlIdentifier)|(?&PerlBlock) )
+			(?<postfix> \! )?
+			(?&PerlOWS)
+			(?:
+				\(
+					(?&PerlOWS)
+					(?<spec> (?&PerlList) )
+					(?&PerlOWS)
+				\)
+			)?
+			(?:
+				\=
+				(?&PerlOWS)
+				(?<default> (?&PerlListElem) )
+			)?
+			(?&PerlOWS)
+			$PPR::GRAMMAR
+		/xs
+		or $me->_syntax_error(
+			'attribute declaration',
+			'has <name> (<spec>) = <default>',
+			'has <name> (<spec>)',
+			'has <name> = <default>',
+			'has <name>',
+			$ref,
+		);
+		
+		my ($pos, $plus, $name, $postfix, $spec, $default) = ($+[0], $+{plus}, $+{name}, $+{postfix}, $+{spec}, $+{default});
+		my $has_spec    = !!exists $+{spec};
+		my $has_default = !!exists $+{default};
+		$plus     ||= '';
+		$postfix  ||= '';
+		substr($$ref, 0, $pos) = $me->_handle_has_keyword("$plus$name$postfix", $has_spec ? $spec : undef, $has_default ? $default : undef);
+	};
 	
 	# `constant` keyword
 	#
