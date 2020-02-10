@@ -6,7 +6,8 @@
 	:runtime-requirement    [ :on "perl 5.014000"^^:CpanId ];
 	:runtime-requirement    [ :on "Import::Into"^^:CpanId ];
 	:runtime-requirement    [ :on "MooX::Press 0.040"^^:CpanId ];
-	:runtime-requirement    [ :on "Keyword::Declare 0.001014"^^:CpanId ];
+	:runtime-requirement    [ :on "PPR"^^:CpanId ];
+	:runtime-requirement    [ :on "Keyword::Simple"^^:CpanId ];
 	:runtime-requirement    [ :on "B::Hooks::EndOfScope"^^:CpanId ];
 	:runtime-requirement    [ :on "Exporter::Tiny 1.000000"^^:CpanId ];
 	:runtime-requirement    [ :on "Devel::StrictMode"^^:CpanId ];
