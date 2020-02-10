@@ -345,7 +345,7 @@ our $GRAMMAR = qr{
 			(?:                                           # CAPTURE:list
 				(?&MxpRoleList)
 			)
-			(?&PerlOWS)			
+			(?&PerlOWS)
 		)#</MxpExtendsSyntax>
 		
 		(?<MxpWithSyntax>
@@ -354,7 +354,7 @@ our $GRAMMAR = qr{
 			(?:                                           # CAPTURE:list
 				(?&MxpRoleList)
 			)
-			(?&PerlOWS)			
+			(?&PerlOWS)
 		)#</MxpWithSyntax>
 		
 		(?<MxpRequiresSyntax>
@@ -1199,7 +1199,7 @@ sub import {
 					die "Expected package name, got $next";
 				}
 				$imports[0] eq ',' and shift @imports;
-			}			
+			}
 			substr($$ref, 0, $pos) = sprintf('q[%s]->_toolkit(%s);', $me, join ",", map(B::perlstring($_), $name, @processed_imports));
 		}
 		
@@ -1321,7 +1321,7 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $name, $expr) = ($+[0], $+{name}, $+{expr});		
+		my ($pos, $name, $expr) = ($+[0], $+{name}, $+{expr});
 		substr($$ref, 0, $pos) = sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr);
 	};
 	
@@ -1444,7 +1444,7 @@ sub import {
 		}
 		elsif ($from !~ /^(q\b)|(qq\b)|"|'/) {
 			$from = B::perlstring($from);
-		}		
+		}
 		if ($via =~ /^\{/) {
 			$via = "scalar(do $via)"
 		}
