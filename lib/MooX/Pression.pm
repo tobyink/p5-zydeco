@@ -270,6 +270,7 @@ our $GRAMMAR = qr{
 		
 		(?<MxpAbstractSyntax>
 			
+			(?&PerlOWS)
 			class
 			(?&PerlOWS)
 			(?: [+] )?                                    # CAPTURE:plus
@@ -537,8 +538,13 @@ our $GRAMMAR = qr{
 
 my %_fetch_re_cache;
 sub _fetch_re {
+	my $key = "@_";
 	my $name = shift;
-	$_fetch_re_cache{$name} ||= do {
+	my %opts = @_;
+	
+	$opts{anchor} ||= '';
+	
+	$_fetch_re_cache{$key} ||= do {
 		"$GRAMMAR" =~ m{<$name>(.+)</$name>}s or die "could not fetch re for $name";
 		(my $re = $1) =~ s/\)\#$//;
 		my @lines = split /\n/, $re;
@@ -548,7 +554,9 @@ sub _fetch_re {
 			}
 		}
 		$re = join "\n", @lines;
-		qr/ $re $GRAMMAR /xs;
+		$opts{anchor} eq 'start' ? qr/ ^ $re $GRAMMAR   /xs :
+		$opts{anchor} eq 'end'   ? qr/   $re $GRAMMAR $ /xs :
+		$opts{anchor} eq 'both'  ? qr/ ^ $re $GRAMMAR $ /xs : qr/ $re $GRAMMAR /xs
 	}
 }
 
@@ -1150,7 +1158,7 @@ sub import {
 	Keyword::Simple::define class => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpClassSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpClassSyntax', anchor => 'start') or $me->_syntax_error(
 			'class declaration',
 			'class <name> (<signature>) { <block> }',
 			'class <name> { <block> }',
@@ -1172,7 +1180,7 @@ sub import {
 	Keyword::Simple::define abstract => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpAbstractSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpAbstractSyntax', anchor => 'start') or $me->_syntax_error(
 			'abstract class declaration',
 			'abstract class <name> (<signature>) { <block> }',
 			'abstract class <name> { <block> }',
@@ -1195,7 +1203,7 @@ sub import {
 		Keyword::Simple::define $kw => sub {
 			my $ref = shift;
 			
-			$$ref =~ _fetch_re('MxpRoleSyntax') or $me->_syntax_error(
+			$$ref =~ _fetch_re('MxpRoleSyntax', anchor => 'start') or $me->_syntax_error(
 				"$kw declaration",
 				"$kw <name> (<signature>) { <block> }",
 				"$kw <name> { <block> }",
@@ -1217,7 +1225,7 @@ sub import {
 	Keyword::Simple::define toolkit => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpToolkitSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpToolkitSyntax', anchor => 'start') or $me->_syntax_error(
 			'toolkit declaration',
 			'toolkit <toolkit> (<extensions>)',
 			'toolkit <toolkit>;',
@@ -1258,7 +1266,7 @@ sub import {
 		Keyword::Simple::define $kw => sub {
 			my $ref = shift;
 			
-			$$ref =~ _fetch_re('MxpHookSyntax') or $me->_syntax_error(
+			$$ref =~ _fetch_re('MxpHookSyntax', anchor => 'start') or $me->_syntax_error(
 				"$kw hook",
 				"$kw { <block> }",
 				$ref,
@@ -1274,7 +1282,7 @@ sub import {
 	Keyword::Simple::define type_name => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpTypeNameSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpTypeNameSyntax', anchor => 'start') or $me->_syntax_error(
 			'type name declaration',
 			'type_name <identifier>',
 			$ref,
@@ -1289,7 +1297,7 @@ sub import {
 	Keyword::Simple::define extends => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpExtendsSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpExtendsSyntax', anchor => 'start') or $me->_syntax_error(
 			'extends declaration',
 			'extends <classes>',
 			$ref,
@@ -1304,7 +1312,7 @@ sub import {
 	Keyword::Simple::define with => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpWithSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpWithSyntax', anchor => 'start') or $me->_syntax_error(
 			'with declaration',
 			'with <roles>',
 			$ref,
@@ -1320,7 +1328,7 @@ sub import {
 	Keyword::Simple::define requires => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpRequiresSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpRequiresSyntax', anchor => 'start') or $me->_syntax_error(
 			'requires declaration',
 			'requires <name> (<signature>)',
 			'requires <name>',
@@ -1337,7 +1345,7 @@ sub import {
 	Keyword::Simple::define has => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpHasSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpHasSyntax', anchor => 'start') or $me->_syntax_error(
 			'attribute declaration',
 			'has <name> (<spec>) = <default>',
 			'has <name> (<spec>)',
@@ -1359,7 +1367,7 @@ sub import {
 	Keyword::Simple::define constant => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpConstantSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpConstantSyntax', anchor => 'start') or $me->_syntax_error(
 			'constant declaration',
 			'constant <name> = <value>',
 			$ref,
@@ -1376,7 +1384,7 @@ sub import {
 		
 		state $re_attr = _fetch_re('MxpAttribute');
 		
-		$$ref =~ _fetch_re('MxpMethodSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpMethodSyntax', anchor => 'start') or $me->_syntax_error(
 			'method declaration',
 			'method <name> <attributes> (<signature>) { <block> }',
 			'method <name> (<signature>) { <block> }',
@@ -1403,7 +1411,7 @@ sub import {
 		
 		state $re_attr = _fetch_re('MxpAttribute');
 		
-		$$ref =~ _fetch_re('MxpMultiSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpMultiSyntax', anchor => 'start') or $me->_syntax_error(
 			'multimethod declaration',
 			'multi method <name> <attributes> (<signature>) { <block> }',
 			'multi method <name> (<signature>) { <block> }',
@@ -1427,7 +1435,7 @@ sub import {
 			
 			state $re_attr = _fetch_re('MxpAttribute');
 		
-			$$ref =~ _fetch_re('MxpModifierSyntax') or $me->_syntax_error(
+			$$ref =~ _fetch_re('MxpModifierSyntax', anchor => 'start') or $me->_syntax_error(
 				"$kw method modifier declaration",
 				"$kw <name> <attributes> (<signature>) { <block> }",
 				"$kw <name> (<signature>) { <block> }",
@@ -1447,7 +1455,7 @@ sub import {
 	Keyword::Simple::define factory => sub {
 		my $ref = shift;
 		
-		if ( $$ref =~ _fetch_re('MxpFactorySyntax') ) {
+		if ( $$ref =~ _fetch_re('MxpFactorySyntax', anchor => 'start') ) {
 			state $re_attr = _fetch_re('MxpAttribute');
 			my ($pos, $name, $attributes, $sig, $code) = ($+[0], $+{name}, $+{attributes}, $+{sig}, $+{code});
 			my $has_sig = !!exists $+{sig};
@@ -1456,7 +1464,7 @@ sub import {
 			return;
 		}
 		
-		$$ref =~ _fetch_re('MxpFactoryViaSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpFactoryViaSyntax', anchor => 'start') or $me->_syntax_error(
 			'factory method declaration',
 			'factory <name> <attributes> (<signature>) { <block> }',
 			'factory <name> (<signature>) { <block> }',
@@ -1475,7 +1483,7 @@ sub import {
 	Keyword::Simple::define coerce => sub {
 		my $ref = shift;
 		
-		$$ref =~ _fetch_re('MxpCoerceSyntax') or $me->_syntax_error(
+		$$ref =~ _fetch_re('MxpCoerceSyntax', anchor => 'start') or $me->_syntax_error(
 			'coercion declaration',
 			'coerce from <type> via <method_name> { <block> }',
 			'coerce from <type> via <method_name>',
