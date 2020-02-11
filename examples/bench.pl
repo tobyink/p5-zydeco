@@ -206,7 +206,7 @@ for my $impl (@impl) {
 	);
 	$o->add(40);
 	$o->add(2);
-	is($o->n, 42, "Objects of class '$class' function correctly");	
+	is($o->n, 42, "Objects of class '$class' function correctly");
 }
 
 # Ensure benchmarks run with TAP-friendly output.
