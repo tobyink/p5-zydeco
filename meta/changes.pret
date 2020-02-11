@@ -163,3 +163,11 @@
 	changeset [
 		item "Major rewrite using PPR and Keyword::Simple for parsing instead of Keyword::Declare. This massively improves compile-time speed and improved compatibility with Perl 5.14 and Perl 5.16."^^Change;
 	].
+
+`MooX-Pression 0.200 cpan:TOBYINK`
+	issued  2020-02-11;
+	changeset [
+		item "Fixed over-eager regexps which weren't just matching at the start of strings."^^Bugfix;
+		item "If Type::Params 1.009002 or above is available, allow mixed named and positional parameters in method signatures."^^Update;
+		item "mip-087-001.pl"^^Documentation;
+	].
