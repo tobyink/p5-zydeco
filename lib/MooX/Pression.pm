@@ -597,14 +597,18 @@ sub _handle_signature_list {
 		
 		if ($sig =~ /^\*((?&PerlIdentifier)) $GRAMMAR/xso) {
 			my $name = $1;
-			$parsed[-1]{name} = $name;
+			$parsed[-1]{name}       = $name;
+			$parsed[-1]{named}      = 1;
+			$parsed[-1]{positional} = 0;
 			++$seen_named;
 			$sig =~ s/^\*\Q$name//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xso;
 		}
 		elsif ($sig =~ /^((?&PerlVariable)) $GRAMMAR/xso) {
 			my $name = $1;
-			$parsed[-1]{name} = $name;
+			$parsed[-1]{name}       = $name;
+			$parsed[-1]{named}      = 0;
+			$parsed[-1]{positional} = 1;
 			++$seen_pos;
 			$sig =~ s/^\Q$name//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xs;
@@ -630,8 +634,37 @@ sub _handle_signature_list {
 	my @signature_var_list;
 	my $type_params_stuff = '[';
 	
+	my (@head, @tail);
+	if ($seen_named and $seen_pos) {
+		while (@parsed and $parsed[0]{positional}) {
+			push @head, shift @parsed;
+		}
+		while (@parsed and $parsed[-1]{positional}) {
+			unshift @tail, pop @parsed;
+		}
+		if (grep $_->{positional}, @parsed) {
+			require Carp;
+			Carp::croak("Signature contains an unexpected mixture of positional and named parameters");
+		}
+		for my $p (@head, @tail) {
+			my $is_optional = $p->{optional};
+			$is_optional ||= ($p->{type} =~ /^Optional/s);
+			if ($is_optional) {
+				require Carp;
+				Carp::croak("Cannot have optional positional parameter $p->{name} in signature with named parameters");
+			}
+			elsif ($p->{default}) {
+				require Carp;
+				Carp::croak("Cannot have positional parameter $p->{name} with default in signature with named parameters");
+			}
+			elsif ($p->{name} =~ /^[\@\%]/) {
+				require Carp;
+				Carp::croak("Cannot have slurpy parameter $p->{name} in signature with named parameters");
+			}
+		}
+	}
+	
 	require B;
-	die "cannot mix named and positional (yet?)" if $seen_pos && $seen_named;
 
 	my $extra = '';
 	my $count = @parsed;
@@ -671,6 +704,17 @@ sub _handle_signature_list {
 	
 	@signature_var_list = '$arg' if $seen_named;
 	$type_params_stuff .= ']';
+	
+	if (@head or @tail) {
+		require Type::Params;
+		'Type::Params'->VERSION(1.009002);
+		my $head_stuff = join(q[,] => map { $_->{type_is_block} ? sprintf('scalar(do %s)', $_->{type}) : B::perlstring($_->{type}) } @head);
+		my $tail_stuff = join(q[,] => map { $_->{type_is_block} ? sprintf('scalar(do %s)', $_->{type}) : B::perlstring($_->{type}) } @tail);
+		my $opts = sprintf('{head=>%s,tail=>%s},', $head_stuff?"[$head_stuff]":0, $tail_stuff?"[$tail_stuff]":0);
+		substr($type_params_stuff, 1, 0) = $opts; # insert options after "["
+		unshift @signature_var_list, map $_->{name}, @head;
+		push @signature_var_list, map $_->{name}, @tail;
+	}
 	
 	return (
 		$seen_named,
@@ -2393,10 +2437,10 @@ bareword name for the method.
   }
 
 MooX::Pression supports method signatures for named arguments and
-positional arguments. If you need a mixture of named and positional
-arguments, this is not currently supported, so instead you should
-define the method with no signature at all, and unpack C<< @_ >> within
-the body of the method.
+positional arguments. A mixture of named and positional arguments
+is allowed, with some limitations. For anything more complicates,
+you should define the method with no signature at all, and unpack
+C<< @_ >> within the body of the method.
 
 =head4 Signatures for Named Arguments
 
@@ -2518,6 +2562,54 @@ pretend it is a hashref or arrayref.
   method marry ( $partner, $date, ArrayRef[Str] @vows ) {
     ...;
   }
+
+=head4 Signatures with Mixed Arguments
+
+Since MooX::Pression 0.200, you may mix named and positional arguments
+with the following limitations:
+
+=over
+
+=item *
+
+Positional arguments must appear at the beginning and/or end of the list.
+They cannot be surrounded by named arguments.
+
+=item *
+
+Positional arguments cannot be optional and cannot have a default. They
+must be required. (Named arguments can be optional and have defaults.)
+
+=item *
+
+No slurpies!
+
+=back
+
+  method print_html ($tag, Str $text, *htmlver?, *xml?, $fh) {
+  
+    confess "update your HTML" if $arg->htmlver < 5;
+    
+    if (length $text) {
+      print $fh "<tag>$text</tag>";
+    }
+    elsif ($arg->xml) {
+      print $fh "<tag />";
+    }
+    else {
+      print $fh "<tag></tag>";
+    }
+  }
+  
+  $obj->print_html('h1', 'Hello World', { xml => true }, \*STDOUT);
+  $obj->print_html('h1', 'Hello World',   xml => true  , \*STDOUT);
+  $obj->print_html('h1', 'Hello World',                  \*STDOUT);
+
+Mixed signatures are basically implemented like named signatures, but
+prior to interpreting C<< @_ >> as a hash, some parameters are spliced
+off the head and tail. We need to know how many elements to splice off
+each end, so that is why there are restrictions on slurpies and optional
+parameters.
 
 =head4 Empty Signatures
 
