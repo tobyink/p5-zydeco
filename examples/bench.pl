@@ -148,11 +148,43 @@ use IO::Callback;
 			$self->_set_n( $self->n + $x );
 		}
 	}
+	
+	class ::Foo::PrsShv_Moose {
+		toolkit Moose;
+		has n (
+			is          => rwp,
+			type        => Int,
+			default     => 0,
+			handles_via => 'Counter',
+			handles     => { add => 'inc' },
+		);
+	}
+	class ::Foo::PrsShv_Mouse {
+		toolkit Mouse;
+		has n (
+			is          => rwp,
+			type        => Int,
+			default     => 0,
+			handles_via => 'Counter',
+			handles     => { add => 'inc' },
+		);
+	}
+	class ::Foo::PrsShv_Moo {
+		toolkit Moo;
+		has n (
+			is          => rwp,
+			type        => Int,
+			default     => 0,
+			handles_via => 'Counter',
+			handles     => { add => 'inc' },
+		);
+	}
 }
 
 my @impl = qw(
 	Moops_Moose  Moops_Mouse  Moops_Moo
 	Prs_Moose    Prs_Mouse    Prs_Moo
+	PrsShv_Moose PrsShv_Mouse PrsShv_Moo
 	MXD
 	Dios
 );
@@ -200,19 +232,19 @@ my %speed_test = (map {
 print "=" x 60, "\n";
 print "Moose implementations\n";
 print "=" x 60, "\n";
-cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Moose Prs_Moose MXD / });
+cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Moose Prs_Moose PrsShv_Moose MXD / });
 print "\n";
 
 print "=" x 60, "\n";
 print "Moo implementations\n";
 print "=" x 60, "\n";
-cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Moo Prs_Moo / });
+cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Moo Prs_Moo PrsShv_Moo / });
 print "\n";
 
 print "=" x 60, "\n";
 print "Mouse implementations\n";
 print "=" x 60, "\n";
-cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Mouse Prs_Mouse / });
+cmpthese(-1, { map { $_ => $speed_test{$_} } qw/ Moops_Mouse Prs_Mouse PrsShv_Mouse / });
 print "\n";
 
 print "=" x 60, "\n";
