@@ -171,3 +171,9 @@
 		item "If Type::Params 1.009002 or above is available, allow mixed named and positional parameters in method signatures."^^Update;
 		item "mip-087-001.pl"^^Documentation;
 	].
+
+`MooX-Pression 0.300 cpan:TOBYINK`
+	issued  2020-02-12;
+	changeset [
+		item "`include` can now be used to load files."^^Addition;
+	].

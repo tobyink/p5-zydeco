@@ -12,7 +12,7 @@ use feature ();
 package MooX::Pression;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.200';
+our $VERSION   = '0.300';
 
 use Keyword::Simple ();
 use PPR;
@@ -1677,7 +1677,7 @@ sub _include {
 #{
 #	package MooX::Pression::Anonymous::Package;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.200';
+#	our $VERSION   = '0.300';
 #	use overload q[""] => sub { ${$_[0]} }, fallback => 1;
 #	sub DESTROY {}
 #	sub AUTOLOAD {
@@ -1688,7 +1688,7 @@ sub _include {
 #	
 #	package MooX::Pression::Anonymous::Class;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.200';
+#	our $VERSION   = '0.300';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub new {
 #		my $me = shift;
@@ -1701,12 +1701,12 @@ sub _include {
 #	
 #	package MooX::Pression::Anonymous::Role;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.200';
+#	our $VERSION   = '0.300';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	
 #	package MooX::Pression::Anonymous::ParameterizableClass;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.200';
+#	our $VERSION   = '0.300';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
@@ -1720,7 +1720,7 @@ sub _include {
 #
 #	package MooX::Pression::Anonymous::ParameterizableRole;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.200';
+#	our $VERSION   = '0.300';
 #	our @ISA       = qw(MooX::Pression::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
