@@ -166,7 +166,47 @@ our $GRAMMAR = qr{
 			(?: multi           (?&MxpMultiSyntax)     )
 		)#</PerlKeyword>
 		
+		(?<MxpSimpleIdentifier>
+		
+			(?&PerlIdentifier)|(?&PerlBlock)
+		)#</MxpSimpleIdentifier>
+		
+		(?<MxpSimpleIdentifiers>
+		
+			(?&MxpSimpleIdentifier)
+			(?:
+				(?&PerlOWS)
+				,
+				(?&PerlOWS)
+				(?&MxpSimpleIdentifier)
+			)*
+		)#</MxpSimpleIdentifiers>
+		
+		(?<MxpDecoratedIdentifier>
+			
+			(?: \+ )?                                     # CAPTURE:plus
+			(?: \* )?                                     # CAPTURE:asterisk
+			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
+			(?: \! | \? )?                                # CAPTURE:postfix
+		)#</MxpDecoratedIdentifier>
+		
+		(?<MxpDecoratedIdentifierSolo>
+			(?: (?&MxpDecoratedIdentifier) )   # deliberately non-capturing
+		)#</MxpDecoratedIdentifierSolo>
+		
+		(?<MxpDecoratedIdentifiers>
+		
+			(?&MxpDecoratedIdentifier)
+			(?:
+				(?&PerlOWS)
+				,
+				(?&PerlOWS)
+				(?&MxpDecoratedIdentifier)
+			)*
+		)#</MxpDecoratedIdentifiers>
+		
 		(?<MxpSimpleTypeSpec>
+		
 			~?(?&PerlBareword)(?&PerlAnonymousArray)?
 		)#</MxpSimpleTypeSpec>
 		
@@ -369,7 +409,7 @@ our $GRAMMAR = qr{
 		(?<MxpRequiresSyntax>
 		
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
+			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?&PerlOWS)
 			(?:
 				[(]
@@ -386,10 +426,7 @@ our $GRAMMAR = qr{
 		(?<MxpHasSyntax>
 		
 			(?&PerlOWS)
-			(?: \+ )?                                     # CAPTURE:plus
-			(?: \* )?                                     # CAPTURE:asterisk
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
-			(?: \! )?                                     # CAPTURE:postfix
+			(?: (?&MxpDecoratedIdentifiers) )             # CAPTURE:name
 			(?&PerlOWS)
 			(?:
 				[(]
@@ -421,7 +458,7 @@ our $GRAMMAR = qr{
 		(?<MxpMethodSyntax>
 		
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )?       # CAPTURE:name
+			(?: (?&MxpSimpleIdentifier) )?                # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -438,13 +475,13 @@ our $GRAMMAR = qr{
 			(?: (?&PerlBlock) )                           # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpMethodSyntax>
-	
+		
 		(?<MxpMultiSyntax>
 		
 			(?&PerlOWS)
 			method
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
+			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -465,7 +502,7 @@ our $GRAMMAR = qr{
 		(?<MxpModifierSyntax>
 		
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
+			(?: (?&MxpSimpleIdentifiers) )                # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -488,7 +525,7 @@ our $GRAMMAR = qr{
 		(?<MxpFactorySyntax>
 		
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
+			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -509,7 +546,7 @@ our $GRAMMAR = qr{
 		(?<MxpFactoryViaSyntax>
 		
 			(?&PerlOWS)
-			(?: (?&PerlIdentifier)|(?&PerlBlock) )        # CAPTURE:name
+			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?&PerlOWS)
 			(?:
 				(: via )
@@ -526,7 +563,7 @@ our $GRAMMAR = qr{
 			(?: from )?
 			(?&PerlOWS)
 			(?:                                           # CAPTURE:from
-				(?&PerlBlock)|(?&PerlQualifiedIdentifier)|(?&PerlString)
+				(?&MxpExtendedTypeSpec)
 			)
 			(?&PerlOWS)
 			(?: via )
@@ -800,6 +837,15 @@ sub _handle_role_list {
 	return join(",", @return);
 }
 
+sub _handle_name_list {
+	my ($me, $names) = @_;
+	return unless $names;
+	
+	state $re = _fetch_re('MxpDecoratedIdentifierSolo');
+	my @names = grep defined, ($names =~ /($re) $GRAMMAR/xg);
+	return @names;
+}
+
 sub _handle_factory_keyword {
 	my ($me, $name, $via, $code, $has_sig, $sig, $attrs) = @_;
 	
@@ -935,12 +981,18 @@ sub _handle_multimethod_keyword {
 }
 
 sub _handle_modifier_keyword {
-	my ($me, $kind, $name, $code, $has_sig, $sig, $attrs) = @_;
+	my ($me, $kind, $names, $code, $has_sig, $sig, $attrs) = @_;
 
 	my $optim;
 	for my $attr (@$attrs) {
 		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
+	
+	my @names = $me->_handle_name_list($names);
+	
+	my $processed_names =
+		join q[, ],
+		map { /^\{/ ? "scalar(do $_)" : B::perlstring($_) } @names;
 
 	if ($has_sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
@@ -955,7 +1007,7 @@ sub _handle_modifier_keyword {
 			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			$kind,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$processed_names,
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$signature_is_named,
 			$type_params_stuff,
@@ -968,7 +1020,7 @@ sub _handle_modifier_keyword {
 			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$processed_names,
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$optim,
 		);
@@ -979,7 +1031,7 @@ sub _handle_modifier_keyword {
 			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
-			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$processed_names,
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$optim,
 		);
@@ -1057,7 +1109,7 @@ sub _handle_package_keyword {
 }
 
 sub _handle_has_keyword {
-	my ($me, $name, $rawspec, $default) = @_;
+	my ($me, $names, $rawspec, $default) = @_;
 	
 	$rawspec = '()' if !defined $rawspec;
 	
@@ -1068,15 +1120,20 @@ sub _handle_has_keyword {
 		$rawspec = "default => sub { $default }, $rawspec";
 	}
 	
-	$name =~ s/^\+\*/+/;
-	$name =~ s/^\*//;
+	my @names = $me->_handle_name_list($names);
 	
-	sprintf(
-		'q[%s]->_has(scalar(%s), %s)',
-		$me,
-		($name =~ /^\{/) ? "do $name" : B::perlstring($name),
-		$rawspec,
-	);
+	my @r;
+	for my $name (@names) {
+		$name =~ s/^\+\*/+/;
+		$name =~ s/^\*//;
+		push @r, sprintf(
+			'q[%s]->_has(%s, %s)',
+			$me,
+			($name =~ /^\{/) ? "scalar(do $name)" : B::perlstring($name),
+			$rawspec,
+		);
+	}
+	join ";", @r;
 }
 
 sub _handle_requires_keyword {
@@ -1378,12 +1435,10 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $plus, $name, $postfix, $spec, $default) = ($+[0], $+{plus}, $+{name}, $+{postfix}, $+{spec}, $+{default});
+		my ($pos, $name, $spec, $default) = ($+[0],  $+{name}, $+{spec}, $+{default});
 		my $has_spec    = !!exists $+{spec};
 		my $has_default = !!exists $+{default};
-		$plus     ||= '';
-		$postfix  ||= '';
-		substr($$ref, 0, $pos) = $me->_handle_has_keyword("$plus$name$postfix", $has_spec ? $spec : undef, $has_default ? $default : undef);
+		substr($$ref, 0, $pos) = $me->_handle_has_keyword($name, $has_spec ? $spec : undef, $has_default ? $default : undef);
 	};
 	
 	# `constant` keyword
@@ -1658,8 +1713,8 @@ sub _multimethod {
 }
 sub _modifier {
 	shift;
-	my ($kind, $name, $value) = @_;
-	push @{ $OPTS{$kind} ||= [] }, $name, $value;
+	my ($kind, @args) = @_;
+	push @{ $OPTS{$kind} ||= [] }, @args;
 }
 sub _include {
 	shift;
@@ -2412,6 +2467,14 @@ made eager using the spec. (It is almost certainly a bad idea to do so though.)
     has display_name ( lazy => false ) = $self->name;
   }
 
+Commas may be used to separate multiple attributes:
+
+  class WidgetCollection {
+    has name, display_name ( type => Str );
+  }
+
+The specification and defaults are applied to every attribute in the list.
+
 If you need to decide an attribute name on-the-fly, you can replace the
 name with a block that returns the name as a string.
 
@@ -2429,19 +2492,25 @@ name with a block that returns the name as a string.
     social_security_no => 1234,
   );
 
-This can be used to define a bunch of types from a list.
-
-  class Person {
-    my @attrs = qw( name age );
-    for my $attr (@attrs) {
-      has {$attr} ( required => true );
-    }
-  }
-
 You can think of the syntax as being kind of like C<print>.
 
   print BAREWORD_FILEHANDLE @strings;
   print { block_returning_filehandle(); } @strings;
+
+The block is called in scalar context, so you'll need a loop to define a list
+like this:
+
+  class Person {
+    my @attrs = qw( name age );
+    
+    # this does not work
+    has {@attrs} ( required => true );
+    
+    # this works
+    for my $attr (@attrs) {
+      has {$attr} ( required => true );
+    }
+  }
 
 The names of attributes can start with an asterisk:
 
@@ -2826,6 +2895,12 @@ not care about the types of the arguments, so can omit checking them.
     say "Speak now or forever hold your peace!";
   }
 
+Commas may be used to modify multiple methods:
+
+  before marry, sky_dive (@args) {
+    say "wish me luck!";
+  }
+
 The C<< :optimize >> attribute is supported for C<before>.
 
 =head3 C<< after >>
@@ -2842,6 +2917,12 @@ There's not much to say about C<after>. It's just like C<before>.
   
   after marry ( $partner, $date? ) {
     say "You may kiss the bride!";
+  }
+
+Commas may be used to modify multiple methods:
+
+  after marry, finished_school_year (@args) {
+    $self->go_on_holiday();
   }
 
 The C<< :optimize >> attribute is supported for C<after>.
@@ -2872,6 +2953,15 @@ are not shifted off C<< @_ >> for you, but the variables are still defined.
     say "Speak now or forever hold your peace!";
     my $return = $self->$next($_[2], $_[3]);
     say "You may kiss the bride!";
+    return $return;
+  }
+
+Commas may be used to modify multiple methods:
+
+  around insert, update ($dbh, @args) {
+    $dbh->begin_transaction;
+    my $return = $self->$next(@_);
+    $dbh->commit_transaction;
     return $return;
   }
 
