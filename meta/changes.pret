@@ -178,3 +178,10 @@
 		item "`include` can now be used to load files."^^Addition;
 		item "`MooX::Pression::PACKAGE_SPEC` can be used to tweak the hashref passed to MooX::Press."^^Addition;
 	].
+
+`MooX-Pression 0.301 cpan:TOBYINK`
+	issued  2020-02-12;
+	changeset [
+		item "Allow `has`, `around`, `before`, and `after` to accept a list of attribute/method names instead of just one."^^Change;
+		item "Require MooX::Press 0.043."^^Packaging;
+	].
