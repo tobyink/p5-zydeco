@@ -1172,6 +1172,34 @@ sub _syntax_error {
 	);
 }
 
+my $owed = 0;
+sub _inject {
+	my ($me, $ref, $trim_length, $new_code, $pad_at_end) = @_;
+	$pad_at_end ||= 0;
+	
+	my @orig_lines = split /\n/, substr($$ref, 0, $trim_length), -1;
+	my @new_lines  = split /\n/, $new_code, -1;
+	
+	if ($#orig_lines > $#new_lines) {
+		my $diff = $#orig_lines - $#new_lines;
+		if ($owed and $owed > $diff) {
+			$owed -= $diff;
+			$diff = 0;
+		}
+		elsif ($owed) {
+			$diff -= $owed;
+			$owed = 0;
+		}
+		my $prefix = "\n" x $diff;
+		$new_code = $pad_at_end ? $new_code.$prefix : $prefix.$new_code;
+	}
+	elsif ($#orig_lines < $#new_lines) {
+		$owed += ($#new_lines - $#orig_lines);
+	}
+	
+	substr $$ref, 0, $trim_length, $new_code;
+}
+
 #
 # KEYWORDS/UTILITIES
 #
@@ -1231,7 +1259,7 @@ sub import {
 		
 		my ($pos, $name) = ($+[0], $+{name});
 		my $qualified = 'MooX::Press'->qualify_name($name, $opts{prefix});
-		substr($$ref, 0, $pos) = sprintf('BEGIN { eval(q[%s]->_include(%s)) or die($@) };', $me, B::perlstring($qualified));
+		$me->_inject($ref, $pos, sprintf('BEGIN { eval(q[%s]->_include(%s)) or die($@) };', $me, B::perlstring($qualified)));
 	};
 
 	# `class` keyword
@@ -1255,7 +1283,7 @@ sub import {
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		substr($$ref, 0, $pos) = $me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts);
+		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
 	};
 
 	Keyword::Simple::define abstract => sub {
@@ -1277,7 +1305,7 @@ sub import {
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		substr($$ref, 0, $pos) = $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig, $plus, \%opts);
+		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
 	};
 
 	for my $kw (qw/ role interface /) {
@@ -1299,7 +1327,7 @@ sub import {
 			my $has_sig = !!exists $+{sig};
 			$block ||= '{}';
 			
-			substr($$ref, 0, $pos) = $me->_handle_package_keyword($kw => $name, $block, $has_sig, $sig, '', \%opts);
+			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $block, $has_sig, $sig, '', \%opts), 1);
 		};
 	}
 
@@ -1333,11 +1361,11 @@ sub import {
 				}
 				$imports[0] eq ',' and shift @imports;
 			}
-			substr($$ref, 0, $pos) = sprintf('q[%s]->_toolkit(%s);', $me, join ",", map(B::perlstring($_), $name, @processed_imports));
+			$me->_inject($ref, $pos, sprintf('q[%s]->_toolkit(%s);', $me, join ",", map(B::perlstring($_), $name, @processed_imports)));
 		}
 		
 		else {
-			substr($$ref, 0, $pos) = sprintf('q[%s]->_toolkit(%s);', $me, B::perlstring($name));
+			$me->_inject($ref, $pos, sprintf('q[%s]->_toolkit(%s);', $me, B::perlstring($name)));
 		}
 	};
 
@@ -1354,7 +1382,7 @@ sub import {
 			);
 			
 			my ($pos, $capture) = ($+[0], $+{hook});
-			substr($$ref, 0, $pos) = sprintf('q[%s]->_begin(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $capture);
+			$me->_inject($ref, $pos, sprintf('q[%s]->_begin(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $capture));
 		};
 	}
 	
@@ -1370,7 +1398,7 @@ sub import {
 		);
 		
 		my ($pos, $capture) = ($+[0], $+{name});
-		substr($$ref, 0, $pos) = sprintf('q[%s]->_type_name(%s);', $me, B::perlstring($capture));
+		$me->_inject($ref, $pos, sprintf('q[%s]->_type_name(%s);', $me, B::perlstring($capture)));
 	};
 	
 	# `extends` keyword
@@ -1385,7 +1413,7 @@ sub import {
 		);
 		
 		my ($pos, $capture) = ($+[0], $+{list});
-		substr($$ref, 0, $pos) = sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($capture, 'class'));
+		$me->_inject($ref, $pos, sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($capture, 'class')));
 	};
 	
 	# `with` keyword
@@ -1401,7 +1429,7 @@ sub import {
 		
 		my ($pos, $capture) = ($+[0], $+{list});
 		
-		substr($$ref, 0, $pos) = sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($capture, 'role'));
+		$me->_inject($ref, $pos, sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($capture, 'role')));
 	};
 	
 	# `requires` keyword
@@ -1418,7 +1446,7 @@ sub import {
 		
 		my ($pos, $name, $sig) = ($+[0], $+{name}, $+{sig});
 		my $has_sig = !!exists $+{sig};
-		substr($$ref, 0, $pos) = $me->_handle_requires_keyword($name, $has_sig, $sig)
+		$me->_inject($ref, $pos, $me->_handle_requires_keyword($name, $has_sig, $sig));
 	};
 	
 	# `has` keyword
@@ -1438,7 +1466,7 @@ sub import {
 		my ($pos, $name, $spec, $default) = ($+[0],  $+{name}, $+{spec}, $+{default});
 		my $has_spec    = !!exists $+{spec};
 		my $has_default = !!exists $+{default};
-		substr($$ref, 0, $pos) = $me->_handle_has_keyword($name, $has_spec ? $spec : undef, $has_default ? $default : undef);
+		$me->_inject($ref, $pos, $me->_handle_has_keyword($name, $has_spec ? $spec : undef, $has_default ? $default : undef));
 	};
 	
 	# `constant` keyword
@@ -1453,7 +1481,7 @@ sub import {
 		);
 		
 		my ($pos, $name, $expr) = ($+[0], $+{name}, $+{expr});
-		substr($$ref, 0, $pos) = sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr);
+		$me->_inject($ref, $pos, sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr));
 	};
 	
 	# `method` keyword
@@ -1480,7 +1508,7 @@ sub import {
 		my $has_sig = !!exists $+{sig};
 		my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 		
-		substr($$ref, 0, $pos) = $me->_handle_method_keyword($name, $code, $has_sig, $sig,  \@attrs);
+		$me->_inject($ref, $pos, $me->_handle_method_keyword($name, $code, $has_sig, $sig,  \@attrs));
 	};
 
 	# `multi` keyword
@@ -1503,7 +1531,7 @@ sub import {
 		my $has_sig = !!exists $+{sig};
 		my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 		
-		substr($$ref, 0, $pos) = $me->_handle_multimethod_keyword($name, $code, $has_sig, $sig, \@attrs);
+		$me->_inject($ref, $pos, $me->_handle_multimethod_keyword($name, $code, $has_sig, $sig, \@attrs));
 	};
 
 	# `before`, `after`, and `around` keywords
@@ -1527,7 +1555,7 @@ sub import {
 			my $has_sig = !!exists $+{sig};
 			my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 			
-			substr($$ref, 0, $pos) = $me->_handle_modifier_keyword($kw, $name, $code, $has_sig, $sig, \@attrs);
+			$me->_inject($ref, $pos, $me->_handle_modifier_keyword($kw, $name, $code, $has_sig, $sig, \@attrs));
 		};
 	}
 	
@@ -1539,7 +1567,7 @@ sub import {
 			my ($pos, $name, $attributes, $sig, $code) = ($+[0], $+{name}, $+{attributes}, $+{sig}, $+{code});
 			my $has_sig = !!exists $+{sig};
 			my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
-			substr($$ref, 0, $pos) = $me->_handle_factory_keyword($name, undef, $code, $has_sig, $sig, \@attrs);
+			$me->_inject($ref, $pos, $me->_handle_factory_keyword($name, undef, $code, $has_sig, $sig, \@attrs));
 			return;
 		}
 		
@@ -1556,7 +1584,7 @@ sub import {
 		
 		my ($pos, $name, $via) = ($+[0], $+{name}, $+{via});
 		$via ||= 'new';
-		substr($$ref, 0, $pos) = $me->_handle_factory_keyword($name, $via, undef, undef, undef, []);
+		$me->_inject($ref, $pos, $me->_handle_factory_keyword($name, $via, undef, undef, undef, []));
 	};
 	
 	Keyword::Simple::define coerce => sub {
@@ -1583,7 +1611,7 @@ sub import {
 			$via = B::perlstring($via);
 		}
 		
-		substr($$ref, 0, $pos) = sprintf('q[%s]->_coerce(%s, %s, %s);', $me, $from, $via, $code ? "sub { my \$class; local \$_; (\$class, \$_) = \@_; do $code }" : '');
+		$me->_inject($ref, $pos, sprintf('q[%s]->_coerce(%s, %s, %s);', $me, $from, $via, $code ? "sub { my \$class; local \$_; (\$class, \$_) = \@_; do $code }" : ''));
 	};
 		
 	# Go!
