@@ -2357,7 +2357,7 @@ in a parent class.
     }
   }
 
-C<rw>, C<rwp>, C<ro>, C<lazy>, C<true>, and C<false> are allowed as
+C<rw>, C<rwp>, C<ro>, C<lazy>, C<bare>, C<true>, and C<false> are allowed as
 barewords for readability, but C<is> is optional, and defaults to C<rw>.
 
 Note C<type> instead of C<isa>. Any type constraints from L<Types::Standard>,
