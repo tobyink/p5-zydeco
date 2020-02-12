@@ -3160,35 +3160,8 @@ copied and pasted into the main MyApp module.
 There are I<no> checks to prevent a file from being included more than
 once, and there are I<no> checks to deal with cyclical inclusions.
 
-Yes, the following does work:
-
-  # lib/MyApp.pm
-  
-  package MyApp {
-    use MooX::Pression;
-    class Foo {
-      include Common::Methods;
-    }
-    class Bar {
-      include Common::Methods;
-      before warn () {
-        warn "Bar:\n";
-      }
-    }
-  }
-  
-  1;
-
-  # lib/MyApp/Common/Methods.pl
-  
-  method dump () {
-    require Data::Dumper;
-    Data::Dumper::Dumper($self);
-  }
-  
-  method warn () {
-    warn($self->dump);
-  }
+Inclusions are currently only supported at the top level, and not within
+class and role definitions.
 
 =head3 C<< MooX::Pression::PACKAGE_SPEC() >>
 
