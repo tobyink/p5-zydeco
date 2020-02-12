@@ -8,15 +8,15 @@ package MyApp {
 	class MyClass {
 		has foo, *bar, {'baz'} = 42;
 		
-		method m1 () {
+		method m1 {
 			return 666;
 		}
 		
-		method m2 () {
+		method m2 {
 			return 999;
 		}
 		
-		around m1, m2 () {
+		around m1, m2 {
 			1 + $self->$next(@_);
 		}
 	}
