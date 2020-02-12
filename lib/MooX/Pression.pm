@@ -1661,7 +1661,7 @@ sub _include {
 	
 	require Path::ScanINC;
 	my @chunks = split /::/, $_[0];
-	$chunks[-1] .= '.pl';	
+	$chunks[-1] .= '.pl';
 	my $file = Path::ScanINC->new->first_file(@chunks);
 	
 	ref $file eq 'ARRAY' and die "not supported yet";
