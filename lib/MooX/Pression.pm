@@ -163,7 +163,8 @@ our $GRAMMAR = qr{
 			(?: before          (?&MxpModifierSyntax)  )|
 			(?: after           (?&MxpModifierSyntax)  )|
 			(?: around          (?&MxpModifierSyntax)  )|
-			(?: multi           (?&MxpMultiSyntax)     )
+			(?: multi           (?&MxpMultiSyntax)     )|
+			(?: try             (?&TrySyntax)          )
 		)#</PerlKeyword>
 		
 		(?<MxpSimpleIdentifier>
@@ -576,7 +577,31 @@ our $GRAMMAR = qr{
 			(?&PerlOWS)
 		)#</MxpCoerceSyntax>
 		
-
+		# try/catch/finally is implemented by another module
+		# but we need to be able to grok it to be able to parse
+		# blocks
+		#
+		(?<TrySyntax>
+		
+			(?&PerlOWS)
+			(?: do )?
+			(?&PerlOWS)
+			(?&PerlBlock)
+			(?:
+				(?&PerlOWS)
+				catch
+				(?&PerlOWS)
+				(?&PerlBlock)
+			)?
+			(?:
+				(?&PerlOWS)
+				finally
+				(?&PerlOWS)
+				(?&PerlBlock)
+			)?
+			(?&PerlOWS)
+		)#</TrySyntax>
+		
 	)
 	$PPR::GRAMMAR
 }xso;
