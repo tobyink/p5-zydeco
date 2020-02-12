@@ -142,6 +142,7 @@ our $GRAMMAR = qr{
 	
 		(?<PerlKeyword>
 		
+			(?: include         (?&MxpIncludeSyntax)   )|
 			(?: class           (?&MxpClassSyntax)     )|
 			(?: abstract        (?&MxpAbstractSyntax)  )|
 			(?: role            (?&MxpRoleSyntax)      )|
@@ -267,6 +268,13 @@ our $GRAMMAR = qr{
 			(?: (?&PerlBlock) )?                          # CAPTURE:block
 			(?&PerlOWS)
 		)#</MxpClassSyntax>
+		
+		(?<MxpIncludeSyntax>
+		
+			(?&PerlOWS)
+			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
+			(?&PerlOWS)
+		)#</MxpIncludeSyntax>
 		
 		(?<MxpAbstractSyntax>
 			
@@ -1153,6 +1161,22 @@ sub import {
 	$_->import::into($caller, qw( -types -is -assert ))
 		for qw(Types::Standard Types::Common::Numeric Types::Common::String);
 	
+	# `include` keyword
+	#
+	Keyword::Simple::define include => sub {
+		my $ref = shift;
+		
+		$$ref =~ _fetch_re('MxpIncludeSyntax', anchor => 'start') or $me->_syntax_error(
+			'include directive',
+			'include <name>',
+			$ref,
+		);
+		
+		my ($pos, $name) = ($+[0], $+{name});
+		my $qualified = 'MooX::Press'->qualify_name($name, $opts{prefix});
+		substr($$ref, 0, $pos) = sprintf('BEGIN { eval(q[%s]->_include(%s)) or die($@) };', $me, B::perlstring($qualified));
+	};
+
 	# `class` keyword
 	#
 	Keyword::Simple::define class => sub {
@@ -1632,6 +1656,23 @@ sub _modifier {
 	my ($kind, $name, $value) = @_;
 	push @{ $OPTS{$kind} ||= [] }, $name, $value;
 }
+sub _include {
+	shift;
+	
+	require Path::ScanINC;
+	my @chunks = split /::/, $_[0];
+	$chunks[-1] .= '.pl';	
+	my $file = Path::ScanINC->new->first_file(@chunks);
+	
+	ref $file eq 'ARRAY' and die "not supported yet";
+	my $code = $file->slurp_utf8;
+	
+	sprintf(
+		"do {\n# line 1 %s\n%s\n};\n1;\n",
+		B::perlstring($file),
+		$code,
+	);
+}
 
 #{
 #	package MooX::Pression::Anonymous::Package;
@@ -1845,6 +1886,8 @@ within this namespace prefix in a single Perl module file. This Perl
 module file would normally be named based on the prefix, so in the
 example above, it would be "MyApp/Objects.pm" and in the example from
 the SYNOPSIS, it would be "MyApp.pm".
+
+But see also the documentation for C<include>.
 
 Of course, there is nothing to stop you from having multiple prefixes
 for different logical parts of a larger codebase, but MooX::Pression
@@ -3065,6 +3108,82 @@ It is used to indicate who is the maintainer of the package.
 If C<class> definitions are nested, C<authority> will be inherited by
 child classes. If a parent class is specified via C<extends>, C<authority>
 will not be inherited.
+
+=head3 C<< include >>
+
+C<include> is the MooX::Pression equivalent of Perl's C<require>.
+
+  package MyApp {
+    use MooX::Pression;
+    include Database;
+    include Classes;
+    include Roles;
+  }
+
+It works somewhat more crudely than C<require> and C<use>, evaluating
+the included file pretty much as if it had been copy and pasted into the
+file that included it.
+
+The names of the files to load are processsed using the same rules for
+prefixes as classes and roles (so MyApp::Database, etc in the example),
+and C<< @INC >> is searched just like C<require> and C<use> do, but
+instead of looking for a file called "MyApp/Database.pm", MooX::Pression
+will look for "MyApp/Database.pl" (yes, ".pl"). This naming convention
+ensures people won't accidentally load MyApp::Database using C<use>
+or C<require> because it isn't intended to be loaded outside the context
+of the MyApp package.
+
+The file "MyApp/Database.pl" might look something like this:
+
+  class Database {
+    has dbh = DBI->connect(...);
+    
+    factory get_db {
+      state $instance = $class->new;
+    }
+  }
+
+Note that it doesn't start with a C<package> statement, nor
+C<use MooX::Pression>. It's just straight on to the definitions.
+There's no C<< 1; >> needed at the end.
+
+C<< use strict >> and C<< use warnings >> are safe to put in the
+file if you need them to satisfy linters, but they're not necessary
+because the contents of the file are evaluated as if they had been
+copied and pasted into the main MyApp module.
+
+There are I<no> checks to prevent a file from being included more than
+once, and there are I<no> checks to deal with cyclical inclusions.
+
+Yes, the following does work:
+
+  # lib/MyApp.pm
+  
+  package MyApp {
+    use MooX::Pression;
+    class Foo {
+      include Common::Methods;
+    }
+    class Bar {
+      include Common::Methods;
+      before warn () {
+        warn "Bar:\n";
+      }
+    }
+  }
+  
+  1;
+
+  # lib/MyApp/Common/Methods.pl
+  
+  method dump () {
+    require Data::Dumper;
+    Data::Dumper::Dumper($self);
+  }
+  
+  method warn () {
+    warn($self->dump);
+  }
 
 =head2 Helper Subs
 
