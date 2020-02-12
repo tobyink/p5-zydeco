@@ -176,4 +176,5 @@
 	issued  2020-02-12;
 	changeset [
 		item "`include` can now be used to load files."^^Addition;
+		item "`MooX::Pression::PACKAGE_SPEC` can be used to tweak the hashref passed to MooX::Press."^^Addition;
 	].
