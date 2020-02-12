@@ -1571,10 +1571,15 @@ sub overload {
 	}
 }
 
+# `MooX::Pression::PACKAGE_SPEC` keyword
+#
+sub PACKAGE_SPEC { \%OPTS }
+
 
 #
 # CALLBACKS
 #
+
 sub _package_callback {
 	shift;
 	my $cb = shift;
@@ -3184,6 +3189,26 @@ Yes, the following does work:
   method warn () {
     warn($self->dump);
   }
+
+=head3 C<< MooX::Pression::PACKAGE_SPEC() >>
+
+This function can be used while a class or role is being compiled to
+tweak the specification for the class/role.
+
+  class Foo {
+    has foo;
+    MooX::Pression::PACKAGE_SPEC->{has}{foo}{type} = Int;
+  }
+
+It returns a hashref of attributes, methods, etc. L<MooX::Press> should
+give you an idea about how the hashref is structured, but MooX::Pression
+only supports a subset of what MooX::Press supports. For example, MooX::Press
+allows C<has> to be an arrayref or a hashref, but MooX::Pression only supports
+a hashref. The exact subset that MooX::Pression supports is subject to change
+without notice.
+
+This can be used to access MooX::Press features that MooX::Pression doesn't
+expose.
 
 =head2 Helper Subs
 
