@@ -1235,6 +1235,22 @@ sub _inject {
 # KEYWORDS/UTILITIES
 #
 
+my @EXPORTABLES = qw(
+	-booleans
+	-privacy
+	-utils
+	-types
+	-is
+	-assert
+	-features
+	try
+	class abstract role interface
+	include toolkit begin end extends with requires
+	has constant method multi factory before after around
+	type_name coerce
+	version authority overload
+);
+
 sub import {
 	no warnings 'closure';
 	my ($me, %opts) = (shift, @_);
@@ -1248,6 +1264,8 @@ sub import {
 	$opts{factory_package}  = $opts{prefix} unless exists $opts{factory_package};
 	$opts{type_library}     = 'Types'       unless exists $opts{type_library};
 	$opts{type_library}     = 'MooX::Press'->qualify_name($opts{type_library}, $opts{prefix});
+	
+	my %want = map +($_ => 1), @{ $opts{keywords} || \@EXPORTABLES };
 	
 	# Optionally export wrapper subs for pre-declared types
 	#
@@ -1266,16 +1284,23 @@ sub import {
 	# Export utility stuff
 	#
 	MooX::Pression::_Gather->import::into($caller, -gather => %opts);
-	MooX::Press::Keywords->import::into($caller, qw( -booleans -privacy -util )); # imports strict and warnings
-	Syntax::Keyword::Try->import::into($caller);
+	strict->import::into($caller);
+	warnings->import::into($caller);
+	MooX::Press::Keywords->import::into($caller, $_)
+		for grep $want{$_}, qw(-booleans -privacy -util);
+	Syntax::Keyword::Try->import::into($caller) if $want{try};	
 	if ($] >= 5.018) {
-		feature->import::into($caller, qw( say state unicode_strings unicode_eval evalbytes current_sub fc ));
+		feature->import::into($caller, qw( say state unicode_strings unicode_eval evalbytes current_sub fc ))
+			if $want{-features};
 	}
 	elsif ($] >= 5.014) {
-		feature->import::into($caller, qw( say state unicode_strings ));
+		feature->import::into($caller, qw( say state unicode_strings ))
+			if $want{-features};
 	}
-	$_->import::into($caller, qw( -types -is -assert ))
-		for qw(Types::Standard Types::Common::Numeric Types::Common::String);
+	for my $library (qw/ Types::Standard Types::Common::Numeric Types::Common::String /) {
+		$library->import::into($caller, $_)
+			for grep $want{$_}, qw( -types -is -assert );
+	}
 	
 	# `include` keyword
 	#
@@ -1291,7 +1316,7 @@ sub import {
 		my ($pos, $name) = ($+[0], $+{name});
 		my $qualified = 'MooX::Press'->qualify_name($name, $opts{prefix});
 		$me->_inject($ref, $pos, sprintf('BEGIN { eval(q[%s]->_include(%s)) or die($@) };', $me, B::perlstring($qualified)));
-	};
+	} if $want{include};
 
 	# `class` keyword
 	#
@@ -1315,7 +1340,7 @@ sub import {
 		$block ||= '{}';
 		
 		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
-	};
+	} if $want{class};
 
 	Keyword::Simple::define abstract => sub {
 		my $ref = shift;
@@ -1337,7 +1362,7 @@ sub import {
 		$block ||= '{}';
 		
 		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
-	};
+	} if $want{abstract};
 
 	for my $kw (qw/ role interface /) {
 		Keyword::Simple::define $kw => sub {
@@ -1359,7 +1384,7 @@ sub import {
 			$block ||= '{}';
 			
 			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $block, $has_sig, $sig, '', \%opts), 1);
-		};
+		} if $want{$kw};
 	}
 
 	Keyword::Simple::define toolkit => sub {
@@ -1398,7 +1423,7 @@ sub import {
 		else {
 			$me->_inject($ref, $pos, sprintf('q[%s]->_toolkit(%s);', $me, B::perlstring($name)));
 		}
-	};
+	} if $want{toolkit};
 
 	# `begin` and `end` keywords
 	#
@@ -1414,7 +1439,7 @@ sub import {
 			
 			my ($pos, $capture) = ($+[0], $+{hook});
 			$me->_inject($ref, $pos, sprintf('q[%s]->_begin(sub { my ($package, $kind) = (shift, @_); do %s });', $me, $capture));
-		};
+		} if $want{$kw};
 	}
 	
 	# `type_name` keyword
@@ -1430,7 +1455,7 @@ sub import {
 		
 		my ($pos, $capture) = ($+[0], $+{name});
 		$me->_inject($ref, $pos, sprintf('q[%s]->_type_name(%s);', $me, B::perlstring($capture)));
-	};
+	} if $want{type_name};
 	
 	# `extends` keyword
 	#
@@ -1445,7 +1470,7 @@ sub import {
 		
 		my ($pos, $capture) = ($+[0], $+{list});
 		$me->_inject($ref, $pos, sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($capture, 'class')));
-	};
+	} if $want{extends};
 	
 	# `with` keyword
 	#
@@ -1461,7 +1486,7 @@ sub import {
 		my ($pos, $capture) = ($+[0], $+{list});
 		
 		$me->_inject($ref, $pos, sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($capture, 'role')));
-	};
+	} if $want{with};
 	
 	# `requires` keyword
 	#
@@ -1478,7 +1503,7 @@ sub import {
 		my ($pos, $name, $sig) = ($+[0], $+{name}, $+{sig});
 		my $has_sig = !!exists $+{sig};
 		$me->_inject($ref, $pos, $me->_handle_requires_keyword($name, $has_sig, $sig));
-	};
+	} if $want{requires};
 	
 	# `has` keyword
 	#
@@ -1498,7 +1523,7 @@ sub import {
 		my $has_spec    = !!exists $+{spec};
 		my $has_default = !!exists $+{default};
 		$me->_inject($ref, $pos, $me->_handle_has_keyword($name, $has_spec ? $spec : undef, $has_default ? $default : undef));
-	};
+	} if $want{has};
 	
 	# `constant` keyword
 	#
@@ -1513,7 +1538,7 @@ sub import {
 		
 		my ($pos, $name, $expr) = ($+[0], $+{name}, $+{expr});
 		$me->_inject($ref, $pos, sprintf('q[%s]->_constant(%s, %s);', $me, B::perlstring($name), $expr));
-	};
+	} if $want{constant};
 	
 	# `method` keyword
 	#
@@ -1540,7 +1565,7 @@ sub import {
 		my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 		
 		$me->_inject($ref, $pos, $me->_handle_method_keyword($name, $code, $has_sig, $sig,  \@attrs));
-	};
+	} if $want{method};
 
 	# `multi` keyword
 	#
@@ -1563,7 +1588,7 @@ sub import {
 		my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 		
 		$me->_inject($ref, $pos, $me->_handle_multimethod_keyword($name, $code, $has_sig, $sig, \@attrs));
-	};
+	} if $want{multi};
 
 	# `before`, `after`, and `around` keywords
 	#
@@ -1587,7 +1612,7 @@ sub import {
 			my @attrs   = $attributes ? grep(defined, ( ($attributes) =~ /($re_attr)/xg )) : ();
 			
 			$me->_inject($ref, $pos, $me->_handle_modifier_keyword($kw, $name, $code, $has_sig, $sig, \@attrs));
-		};
+		} if $want{$kw};
 	}
 	
 	Keyword::Simple::define factory => sub {
@@ -1616,7 +1641,7 @@ sub import {
 		my ($pos, $name, $via) = ($+[0], $+{name}, $+{via});
 		$via ||= 'new';
 		$me->_inject($ref, $pos, $me->_handle_factory_keyword($name, $via, undef, undef, undef, []));
-	};
+	} if $want{factory};
 	
 	Keyword::Simple::define coerce => sub {
 		my $ref = shift;
@@ -1643,7 +1668,7 @@ sub import {
 		}
 		
 		$me->_inject($ref, $pos, sprintf('q[%s]->_coerce(%s, %s, %s);', $me, $from, $via, $code ? "sub { my \$class; local \$_; (\$class, \$_) = \@_; do $code }" : ''));
-	};
+	} if $want{coerce};
 		
 	# Go!
 	#
@@ -1654,6 +1679,7 @@ sub import {
 	
 	# Need this to export `authority` and `version`...
 	@_ = ($me);
+	push @_, grep $want{$_}, @MooX::Pression::EXPORT;
 	goto \&Exporter::Tiny::import;
 }
 
@@ -3542,6 +3568,33 @@ MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
 And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
 L<Types::Common::String>, and L<Types::Common::Numeric>.
+
+As of version 0.304, you can choose which parts of MooX::Pression you
+import:
+
+  package MyApp {
+    use MooX::Pression keywords => [qw/
+      -booleans
+      -privacy
+      -utils
+      -types
+      -is
+      -assert
+      -features
+      try
+      class abstract role interface
+      include toolkit begin end extends with requires
+      has constant method multi factory before after around
+      type_name coerce
+      version authority overload
+    /];
+
+It should mostly be obvious what they all do, but C<< -privacy >> is
+C<ro>, C<rw>, C<rwp>, etc; C<< -types >> is bareword type constraints
+(though even without this export, they should work in method signatures),
+C<< -is >> are the functions like C<is_NonEmptyStr> and C<is_Object>,
+C<< -assert >> are functions like C<assert_Int>, C<< -utils >> gives
+you C<blessed> and C<confess>.
 
 =head2 Anonymous Classes and Roles
 
