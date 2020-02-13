@@ -194,3 +194,9 @@
 		item "Document that a `bare` constant is exported."^^Documentation;
 		item "Improvements to line number accounting."^^Change;
 	].
+
+`MooX-Pression 0.303 cpan:TOBYINK`
+	issued  2020-02-13;
+	changeset [
+		item "Require MooX::Press 0.044 to avoid test failures."^^Packaging;
+	].
