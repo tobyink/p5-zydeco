@@ -185,3 +185,12 @@
 		item "Allow `has`, `around`, `before`, and `after` to accept a list of attribute/method names instead of just one."^^Change;
 		item "Require MooX::Press 0.043."^^Packaging;
 	].
+
+`MooX-Pression 0.302 cpan:TOBYINK`
+	issued  2020-02-13;
+	changeset [
+		item "Make `method`, `multi method`, `constant`, `around`, `before`, and `after` to work outside of class/role/interface blocks too."^^Change;
+		item "Methods that used try/catch/finally would sometimes be unparseable; the block parser is now aware of those keywords."^^Bugfix;
+		item "Document that a `bare` constant is exported."^^Documentation;
+		item "Improvements to line number accounting."^^Change;
+	].
