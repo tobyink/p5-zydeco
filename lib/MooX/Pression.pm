@@ -1185,16 +1185,22 @@ sub _handle_requires_keyword {
 }
 
 sub _syntax_error {
-	my $ref = pop;
-	my ($me, $kind, @poss) = @_;
 	require Carp;
-	Carp::croak(
-		"Unexpected syntax in $kind.\n" .
-		"Expected:\n" .
-		join("", map "\t$_\n", @poss) .
-		"Got:\n" .
-		"\t" . substr($$ref, 0, 32)
-	);
+	if (ref $_[-1]) {
+		my $ref = pop;
+		my ($me, $kind, @poss) = @_;
+		Carp::croak(
+			"Unexpected syntax in $kind.\n" .
+			"Expected:\n" .
+			join("", map "\t$_\n", @poss) .
+			"Got:\n" .
+			"\t" . substr($$ref, 0, 32)
+		);
+	}
+	else {
+		my ($me, $kind, $msg) = @_;
+		Carp::croak("Unexpected syntax in $kind.\n" . $msg);
+	}
 }
 
 my $owed = 0;
@@ -1691,32 +1697,38 @@ sub PACKAGE_SPEC { \%OPTS }
 sub _package_callback {
 	shift;
 	my $cb = shift;
-	local %OPTS = ();
+	local %OPTS = (in_package => 1);
 	&$cb;
+	delete $OPTS{in_package};
 #	use Data::Dumper;
 #	$Data::Dumper::Deparse = 1;
 #	print "OPTS:".Dumper $cb, +{ %OPTS };
 	return +{ %OPTS };
 }
 sub _has {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('attribute declaration', 'Not supported outside class or role');
 	my ($attr, %spec) = @_;
 	$OPTS{has}{$attr} = \%spec;
 }
 sub _extends {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('extends declaration', 'Not supported outside class');
 	@{ $OPTS{extends}||=[] } = @_;
 }
 sub _type_name {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('extends declaration', 'Not supported outside class or role');
 	$OPTS{type_name} = shift;
 }
 sub _begin {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('begin hook', 'Not supported outside class or role (use import option instead)');
 	$OPTS{begin} = shift;
 }
 sub _end {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('end hook', 'Not supported outside class or role (use import option instead)');
 	$OPTS{end} = shift;
 }
 sub _interface {
@@ -1728,54 +1740,83 @@ sub _abstract {
 	$OPTS{abstract} = shift;
 }
 sub _with {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('with declaration', 'Not supported outside class or role');
 	push @{ $OPTS{with}||=[] }, @_;
 }
 sub _toolkit {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('toolkit declaration', 'Not supported outside class or role (use import option instead)');
 	my ($toolkit, @imports) = @_;
 	$OPTS{toolkit} = $toolkit;
 	push @{ $OPTS{import}||=[] }, @imports if @imports;
 }
 sub _requires {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('requires declaration', 'Not supported outside role');
 	push @{ $OPTS{requires}||=[] }, @_;
 }
 sub _coerce {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('coercion declaration', 'Not supported outside class');
 	push @{ $OPTS{coerce}||=[] }, @_;
 }
 sub _factory {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} or $me->_syntax_error('factory method declaration', 'Not supported outside class');
 	push @{ $OPTS{factory}||=[] }, @_;
 }
 sub _constant {
-	shift;
+	my $me = shift;
 	my ($name, $value) = @_;
+	if (! $OPTS{in_package}) {
+		'MooX::Press'->install_constants(scalar(caller), { $name => $value });
+		return;
+	}
 	$OPTS{constant}{$name} = $value;
 }
 sub _can {
-	shift;
+	my $me = shift;
 	my ($name, $code) = @_;
+	if (! $OPTS{in_package}) {
+		'MooX::Press'->install_methods(scalar(caller), { $name => $code });
+		return;
+	}
 	$OPTS{can}{$name} = $code;
 }
 sub _multimethod {
-	shift;
+	my $me = shift;
 	my ($name, $spec) = @_;
+	if (! $OPTS{in_package}) {
+		'MooX::Press'->install_multimethod(scalar(caller), 'class', $name, $spec);
+		return;
+	}
 	push @{ $OPTS{multimethod} ||= [] }, $name => $spec;
 }
 sub _modifier {
-	shift;
+	my $me = shift;
 	my ($kind, @args) = @_;
+	if (! $OPTS{in_package}) {
+		my $codelike = pop @args;
+		my $coderef  = 'MooX::Press'->_prepare_method_modifier(scalar(caller), $kind, \@args, $codelike);
+		require Class::Method::Modifiers;
+		Class::Method::Modifiers::install_modifier(scalar(caller), $kind, @args, $coderef);
+	}
 	push @{ $OPTS{$kind} ||= [] }, @args;
 }
 sub _include {
-	shift;
+	my $me = shift;
+	$OPTS{in_package} and $me->_syntax_error('include directive', 'Not supported inside class or role');
 	
 	require Path::ScanINC;
 	my @chunks = split /::/, $_[0];
 	$chunks[-1] .= '.pl';
 	my $file = Path::ScanINC->new->first_file(@chunks);
+	
+	if (!$file) {
+		require Carp;
+		Carp::croak("No such file: " . join("/", @chunks));
+	}
 	
 	ref $file eq 'ARRAY' and die "not supported yet";
 	my $code = $file->slurp_utf8;
@@ -2227,7 +2268,9 @@ You can of course specify you want to use Moo:
 
 Not all MooseX/MouseX/MooX packages will work, but *X::StrictConstructor will.
 
-It is possible to set a default toolkit when you import MooX::Pression.
+Although it is not possible to use the C<toolkit> keyword outside of
+C<class>, C<abstract class>, C<role>, and C<interface> blocks, it is
+possible to specify a default toolkit when you import MooX::Pression.
 
   use MooX::Pression (
     ...,
@@ -2241,7 +2284,8 @@ It is possible to set a default toolkit when you import MooX::Pression.
 
 =head3 C<< extends >>
 
-Defines a parent class. Only for use within C<class> blocks.
+Defines a parent class. Only for use within C<class> and C<abstract class>
+blocks.
 
   class Person {
     extends Animal;
@@ -2288,6 +2332,9 @@ to the end of it:
 
 This is equivalent to declaring an empty role.
 
+The C<with> keyword cannot be used outside of C<class>, C<abstract class>,
+C<role>, and C<interface> blocks.
+
 =head3 C<< begin >>
 
 This code gets run early on in the definition of a class or role.
@@ -2304,7 +2351,9 @@ be defined yet.
 The lexical variables C<< $package >> and C<< $kind >> are defined within the
 block. C<< $kind >> will be either 'class' or 'role'.
 
-It is possible to define a global chunk of code to run too:
+The C<begin> keyword cannot be used outside of C<class>, C<abstract class>,
+C<role>, and C<interface> blocks, though it is possible to define a global
+default for it:
 
   use MooX::Pression (
     ...,
@@ -2335,7 +2384,9 @@ This code gets run late in the definition of a class or role.
 The lexical variables C<< $package >> and C<< $kind >> are defined within the
 block. C<< $kind >> will be either 'class' or 'role'.
 
-It is possible to define a global chunk of code to run too:
+The C<end> keyword cannot be used outside of C<class>, C<abstract class>,
+C<role>, and C<interface> blocks, though it is possible to define a global
+default for it:
 
   use MooX::Pression (
     ...,
@@ -2355,12 +2406,16 @@ blocks will not be inherited.
 
 =head3 C<< has >>
 
+Defines an attribute.
+
   class Person {
     has name;
     has age;
   }
   
   my $bob = MyApp->new_person(name => "Bob", age => 21);
+
+Cannot be used outside of C<class>, C<abstract class>, and C<role> blocks.
 
 Moo-style attribute specifications may be given:
 
@@ -2575,6 +2630,8 @@ may also improve syntax highlighting.)
 
 =head3 C<< constant >>
 
+Defines a constant.
+
   class Person {
     extends Animal;
     constant latin_name = 'Homo sapiens';
@@ -2583,7 +2640,12 @@ may also improve syntax highlighting.)
 C<< MyApp::Person->latin_name >>, C<< MyApp::Person::latin_name >>, and
 C<< $person_object->latin_name >> will return 'Homo sapiens'.
 
+Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
+will define a constant in the caller package. (That is, usually the factory.)
+
 =head3 C<< method >>
+
+Defines a method.
 
   class Person {
     has spouse;
@@ -2598,6 +2660,9 @@ C<< $person_object->latin_name >> will return 'Homo sapiens'.
 
 C<< sub { ... } >> will not work as a way to define methods within the
 class. Use C<< method { ... } >> instead.
+
+Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
+C<method> will define a method in the caller package. (Usually the factory.)
 
 The variables C<< $self >> and C<< $class >> will be automatically defined
 within all methods. C<< $self >> is set to C<< $_[0] >> (though the invocant
@@ -2882,6 +2947,10 @@ keyword C<multi>
 This feature requires L<MooX::Press> 0.035 and L<Sub::MultiMethod> to be
 installed.
 
+Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
+C<multi method> will define a multi method in the caller package. (That is,
+usually the factory.)
+
 =head3 C<< requires >>
 
 Indicates that a role requires classes to fulfil certain methods.
@@ -2925,6 +2994,8 @@ Is a shorthand for this:
     }
   }
 
+Can only be used in C<role> and C<interface> blocks.
+
 =head3 C<< before >>
 
   before marry {
@@ -2956,6 +3027,10 @@ Commas may be used to modify multiple methods:
 
 The C<< :optimize >> attribute is supported for C<before>.
 
+Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
+and C<interface> blocks, modifying methods in the caller package, which is
+usually the factory package.
+
 =head3 C<< after >>
 
 There's not much to say about C<after>. It's just like C<before>.
@@ -2979,6 +3054,10 @@ Commas may be used to modify multiple methods:
   }
 
 The C<< :optimize >> attribute is supported for C<after>.
+
+Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
+and C<interface> blocks, modifying methods in the caller package, which is
+usually the factory package.
 
 =head3 C<< around >>
 
@@ -3022,6 +3101,10 @@ The C<< :optimize >> attribute is supported for C<around>.
 
 Note that C<< SUPER:: >> won't work as expected in MooX::Pression, so
 C<around> should be used instead.
+
+Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
+and C<interface> blocks, modifying methods in the caller package, which is
+usually the factory package.
 
 =head3 C<< factory >>
 
@@ -3125,6 +3208,8 @@ like saying C<< via new >>.
 
 The C<< :optimize >> attribute is supported for C<factory>.
 
+The C<factory> keyword can only be used inside C<class> blocks.
+
 =head4 Implementing a singleton
 
 Factories make it pretty easy to implement a singleton.
@@ -3156,6 +3241,9 @@ objects!)
 
 The class will still be called L<MyApp::Homo::Sapiens> but the type in the
 type library will be called B<Human> instead of B<Homo_Sapiens>.
+
+Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
+blocks.
 
 =head3 C<< coerce >>
 
@@ -3208,6 +3296,8 @@ statement more readable.
 
 The C<< :optimize >> attribute is not currently supported for C<coerce>.
 
+Can only be used in C<class> blocks.
+
 =head3 C<< overload >>
 
   class Collection {
@@ -3218,6 +3308,8 @@ The C<< :optimize >> attribute is not currently supported for C<coerce>.
 The list passed to C<overload> is passed to L<overload> with no other
 processing.
 
+Can only be used in C<class> blocks.
+
 =head3 C<< version >>
 
   class Person {
@@ -3225,6 +3317,9 @@ processing.
   }
 
 This just sets C<< $MyApp::Person::VERSION >>.
+
+Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
+blocks.
 
 You can set a default version for all packages like this:
 
@@ -3246,6 +3341,9 @@ will not be inherited.
 This just sets C<< $MyApp::Person::AUTHORITY >>.
 
 It is used to indicate who is the maintainer of the package.
+
+Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
+blocks.
 
   use MooX::Pression (
     ...,
