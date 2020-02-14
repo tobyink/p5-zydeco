@@ -3,7 +3,7 @@ use warnings;
 use Test::More;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class MyClass {
 		has foo, *bar, {'baz'} = 42;

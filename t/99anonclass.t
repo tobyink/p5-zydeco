@@ -4,7 +4,7 @@ use Test::More;
 use Test::Fatal;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Foo {
 		type_name Foozle;

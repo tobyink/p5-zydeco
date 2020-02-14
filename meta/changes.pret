@@ -208,3 +208,9 @@
 		item "Support private/lexical methods with `method $name`."^^Addition;
 		item "Import option `keywords` to limit which keywords you import."^^Addition;
 	].
+
+`Zydeco 0.500 cpan:TOBYINK`
+	issued  2020-02-14;
+	changeset [
+		item "MooX::Pression is now called Zydeco."^^Packaging;
+	].

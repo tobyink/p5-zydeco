@@ -8,7 +8,7 @@ use Test::Requires { 'MooX::Press' => '0.035' };
 use Types::Standard -types;
 
 package My {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Class {
 		with RoleA, RoleB;

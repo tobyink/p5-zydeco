@@ -3,7 +3,7 @@ use warnings;
 use Test::More; # skip_all => 'todo';
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Animal {
 		has name;
 		class Species (Str $common, Str $binomial) {
@@ -88,7 +88,7 @@ ok(
 
 my $hmm = q{
 	package MyApp2 {
-		use MooX::Pression;
+		use Zydeco;
 		class Foo (Int $x) {
 			class Bar;
 		}

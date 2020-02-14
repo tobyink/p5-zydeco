@@ -4,10 +4,10 @@ use Test::More;
 use Test::Fatal;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Foo {
 		has foo;
-		MooX::Pression::PACKAGE_SPEC->{has}{foo}{type} = Int;
+		Zydeco::PACKAGE_SPEC->{has}{foo}{type} = Int;
 	}
 }
 

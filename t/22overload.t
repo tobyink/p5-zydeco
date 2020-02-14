@@ -4,7 +4,7 @@ use Test::More;
 { package Local::Dummy1; use Test::Requires { 'MooX::Press' => '0.033' } };
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Foo {
 		has list = [];
 		overload '@{}' => sub { shift->list };

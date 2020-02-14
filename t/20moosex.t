@@ -16,7 +16,7 @@ package Local::Test {
 }
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Foo {
 		toolkit Moose (Aliases, StrictConstructor, ::Local::Test);
 		has this ( type => 'Str', alias => 'that' );

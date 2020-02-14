@@ -5,7 +5,7 @@ use Test::Requires { 'Type::Params' => '1.009002' };
 use Test::Requires { 'MooX::Press' => '0.042' };
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Foo {
 		my $Int = Int->plus_coercions(Num, q[int $_]);

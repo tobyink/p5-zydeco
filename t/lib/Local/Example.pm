@@ -1,5 +1,5 @@
 package Local::Example;
-use MooX::Pression;
+use Zydeco;
 
 class Foo {
 	has foo;

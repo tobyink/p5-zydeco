@@ -3,7 +3,7 @@ use warnings;
 use Test::More;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Doggo {
 		with Generators::Species('dog', 'Canis familiaris'), GoodBoi?;
 	}
@@ -31,7 +31,7 @@ ok(
 );
 
 package MyApp2 {
-	use MooX::Pression;
+	use Zydeco;
 	role SimpleAttributes ( ArrayRef[Str] @attrs ) {
 		for my $attr (@attrs) {
 			has {$attr} ( is => ro );
@@ -49,7 +49,7 @@ is($obj->baz, 3);
 
 my $hmm = q{
 	package MyApp3 {
-		use MooX::Pression;
+		use Zydeco;
 		role Foo (Int $x) {
 			class Bar;
 		}
@@ -62,7 +62,7 @@ like($@, qr/Foo is not a class/);
 
 $hmm = q{
 	package MyApp4 {
-		use MooX::Pression;
+		use Zydeco;
 		role Foo {
 			class Bar;
 		}

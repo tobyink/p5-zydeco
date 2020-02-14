@@ -4,7 +4,7 @@ use Test::More;
 use Test::Fatal;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Animal {
 		has name;
 	}
@@ -88,7 +88,7 @@ ok(
 );
 
 package MyApp2 {
-	use MooX::Pression;
+	use Zydeco;
 	our $XYZZY;
 	class Bumph () {
 		has xyzzy ( default => $XYZZY );

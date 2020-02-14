@@ -5,7 +5,7 @@ use Test::Fatal;
 use Devel::StrictMode 'STRICT';
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	role Foo {
 		requires bar (Str $x, Num $y);
 		requires baz;
@@ -38,7 +38,7 @@ ok eval q{
 
 my ($Role, $Class);
 package MyApp2 {
-	use MooX::Pression;
+	use Zydeco;
 	$Role = do { role {
 		requires xyzzy(Int $x);
 	}};

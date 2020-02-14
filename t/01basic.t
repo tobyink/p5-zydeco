@@ -4,7 +4,7 @@
 
 =head1 PURPOSE
 
-Test that MooX::Pression compiles.
+Test that Zydeco compiles.
 
 =head1 AUTHOR
 
@@ -24,7 +24,7 @@ use strict;
 use warnings;
 use Test::More;
 
-use_ok('MooX::Pression');
+use_ok('Zydeco');
 
 done_testing;
 

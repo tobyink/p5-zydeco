@@ -4,7 +4,7 @@ use Test::More;
 use Test::Fatal;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Foo {
 		my $Rounded = Int->plus_coercions(Num, q{int($_)});

@@ -5,7 +5,7 @@ use Test::More;
 my $counter = 0;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Quux;
 	

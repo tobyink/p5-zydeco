@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 
-use MooX::Pression prefix => 'MyApp';
+use Zydeco prefix => 'MyApp';
 
 class Foo {
 	has name ( required => true );

@@ -3,7 +3,7 @@ use warnings;
 use Test::More;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	abstract class Foo;
 	class Bar {

@@ -5,7 +5,7 @@ use Test::Fatal;
 
 package MyApp
 {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Foo
 	{

@@ -4,7 +4,7 @@ use Test::More;
 use Test::Fatal;
 
 package Geometry {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Point {
 		has *x ( is => rw, type => Int, default => 0 );

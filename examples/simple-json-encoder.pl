@@ -12,7 +12,7 @@ say $json->stringify({
 });
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	
 	# A JSON encoder.
 	class JSON::Encoder {

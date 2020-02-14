@@ -4,7 +4,7 @@ use Test::More;
 use Test::Fatal;
 
 package MyApp {
-	use MooX::Pression;
+	use Zydeco;
 	class Foo {
 		has $bizzle ( type => Int );
 		
@@ -29,7 +29,7 @@ MyApp->new_foo(bizzle => 42)->do_tests();
 note 'delegation';
 
 package MyApp2 {
-	use MooX::Pression;
+	use Zydeco;
 	class Foo {
 		has bizzle (
 			is           => private,

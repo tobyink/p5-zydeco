@@ -4,12 +4,12 @@ use warnings;
 use B ();
 use Carp ();
 use Import::Into ();
-use MooX::Press 0.025 ();
+use MooX::Press 0.045 ();
 use MooX::Press::Keywords ();
 use Syntax::Keyword::Try ();
 use feature ();
 
-package MooX::Pression;
+package Zydeco;
 
 our $AUTHORITY = 'cpan:TOBYINK';
 our $VERSION   = '0.400';
@@ -21,7 +21,7 @@ use Exporter::Shiny our @EXPORT = qw( version authority overload );
 use Devel::StrictMode qw(STRICT);
 
 BEGIN {
-	package MooX::Pression::_Gather;
+	package Zydeco::_Gather;
 	my %gather;
 	my %stack;
 	sub import {
@@ -130,7 +130,7 @@ BEGIN {
 		}
 	}
 
-	$INC{'MooX/Pression/_Gather.pm'} = __FILE__;
+	$INC{'Zydeco/_Gather.pm'} = __FILE__;
 };
 
 #
@@ -1093,7 +1093,7 @@ sub _handle_package_keyword {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $code);
 		sprintf(
-			'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use MooX::Pression::_Gather -unparent;',
+			'use Zydeco::_Gather -parent => %s; use Zydeco::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use Zydeco::_Gather -unparent;',
 			B::perlstring("$plus$name"),
 			B::perlstring("$kind\_generator:$plus$name"),
 			$munged_code,
@@ -1120,14 +1120,14 @@ sub _handle_package_keyword {
 	elsif ($name) {
 		$code
 			? sprintf(
-				'use MooX::Pression::_Gather -parent => %s; use MooX::Pression::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use MooX::Pression::_Gather -unparent;',
+				'use Zydeco::_Gather -parent => %s; use Zydeco::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use Zydeco::_Gather -unparent;',
 				B::perlstring("$plus$name"),
 				B::perlstring("$kind:$plus$name"),
 				$me,
 				$code,
 			)
 			: sprintf(
-				'use MooX::Pression::_Gather -gather, %s => {};',
+				'use Zydeco::_Gather -gather, %s => {};',
 				B::perlstring("$kind:$plus$name"),
 			);
 	}
@@ -1310,7 +1310,7 @@ sub import {
 	
 	# Export utility stuff
 	#
-	MooX::Pression::_Gather->import::into($caller, -gather => %opts);
+	Zydeco::_Gather->import::into($caller, -gather => %opts);
 	strict->import::into($caller);
 	warnings->import::into($caller);
 	MooX::Press::Keywords->import::into($caller, $_)
@@ -1700,13 +1700,13 @@ sub import {
 	# Go!
 	#
 	on_scope_end {
-		eval "package $caller; use MooX::Pression::_Gather -go; 1"
+		eval "package $caller; use Zydeco::_Gather -go; 1"
 			or Carp::croak($@);
 	};
 	
 	# Need this to export `authority` and `version`...
 	@_ = ($me);
-	push @_, grep $want{$_}, @MooX::Pression::EXPORT;
+	push @_, grep $want{$_}, @Zydeco::EXPORT;
 	goto \&Exporter::Tiny::import;
 }
 
@@ -1738,7 +1738,7 @@ sub overload {
 	}
 }
 
-# `MooX::Pression::PACKAGE_SPEC` keyword
+# `Zydeco::PACKAGE_SPEC` keyword
 #
 sub PACKAGE_SPEC { \%OPTS }
 
@@ -1882,7 +1882,7 @@ sub _include {
 }
 
 #{
-#	package MooX::Pression::Anonymous::Package;
+#	package Zydeco::Anonymous::Package;
 #	our $AUTHORITY = 'cpan:TOBYINK';
 #	our $VERSION   = '0.400';
 #	use overload q[""] => sub { ${$_[0]} }, fallback => 1;
@@ -1893,10 +1893,10 @@ sub _include {
 #		$$me->$method(@_);
 #	}
 #	
-#	package MooX::Pression::Anonymous::Class;
+#	package Zydeco::Anonymous::Class;
 #	our $AUTHORITY = 'cpan:TOBYINK';
 #	our $VERSION   = '0.400';
-#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub new {
 #		my $me = shift;
 #		$$me->new(@_);
@@ -1906,33 +1906,33 @@ sub _include {
 #		sub { $me->new(@_) }
 #	};
 #	
-#	package MooX::Pression::Anonymous::Role;
+#	package Zydeco::Anonymous::Role;
 #	our $AUTHORITY = 'cpan:TOBYINK';
 #	our $VERSION   = '0.400';
-#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	
-#	package MooX::Pression::Anonymous::ParameterizableClass;
+#	package Zydeco::Anonymous::ParameterizableClass;
 #	our $AUTHORITY = 'cpan:TOBYINK';
 #	our $VERSION   = '0.400';
-#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
 #		my $gen = $$me->generate_package(@_);
-#		bless \$gen, 'MooX::Pression::Anonymous::Class';
+#		bless \$gen, 'Zydeco::Anonymous::Class';
 #	}
 #	use overload q[&{}] => sub {
 #		my $me = shift;
 #		sub { $me->new_class(@_) }
 #	};
 #
-#	package MooX::Pression::Anonymous::ParameterizableRole;
+#	package Zydeco::Anonymous::ParameterizableRole;
 #	our $AUTHORITY = 'cpan:TOBYINK';
 #	our $VERSION   = '0.400';
-#	our @ISA       = qw(MooX::Pression::Anonymous::Package);
+#	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
 #		my $gen = $$me->generate_package(@_);
-#		bless \$gen, 'MooX::Pression::Anonymous::Class';
+#		bless \$gen, 'Zydeco::Anonymous::Class';
 #	}
 #	use overload q[&{}] => sub {
 #		my $me = shift;
@@ -1960,7 +1960,7 @@ sub anonymous_package {
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
-	#return bless(\$qname, "MooX::Pression::Anonymous::".ucfirst($kind));
+	#return bless(\$qname, "Zydeco::Anonymous::".ucfirst($kind));
 	return $qname;
 }
 
@@ -1975,7 +1975,7 @@ sub anonymous_generator {
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
-	#return bless(\$qname, "MooX::Pression::Anonymous::Parameterizable".ucfirst($kind));
+	#return bless(\$qname, "Zydeco::Anonymous::Parameterizable".ucfirst($kind));
 	return $qname;
 }
 
@@ -1989,7 +1989,7 @@ __END__
 
 =head1 NAME
 
-MooX::Pression - express yourself through moo
+Zydeco - express yourself through moo
 
 =head1 SYNOPSIS
 
@@ -2000,7 +2000,7 @@ MyApp.pm
   use warnings;
   
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     class Person {
       has name   ( type => Str, required => true );
@@ -2043,7 +2043,7 @@ my_script.pl
 
 =head1 DESCRIPTION
 
-L<MooX::Pression> is kind of like L<Moops>; a marrying together of L<Moo>
+L<Zydeco> is kind of like L<Moops>; a marrying together of L<Moo>
 with L<Type::Tiny> and some keyword declaration magic. Instead of being
 built on L<Kavorka>, L<Parse::Keyword>, L<Keyword::Simple> and a whole
 heap of crack, it is built on L<MooX::Press>, L<Keyword::Simple>, and L<PPR>.
@@ -2054,19 +2054,19 @@ Some of the insane features of Moops have been dialled back, and others
 have been amped up.
 
 It's more opinionated about API design and usage than Moops is, but in
-most cases, it should be fairly easy to port Moops code to MooX::Pression.
+most cases, it should be fairly easy to port Moops code to Zydeco.
 
-MooX::Pression requires Perl 5.18.0 or above. It may work on Perl 5.14.x
+Zydeco requires Perl 5.18.0 or above. It may work on Perl 5.14.x
 and Perl 5.16.x partly, but there are likely to be issues.
 
-L<MooX::Press> is a less magic version of MooX::Pression and only requires
+L<MooX::Press> is a less magic version of Zydeco and only requires
 Perl 5.8.8 or above.
 
 =head2 Important Concepts
 
 =head3 The Factory Package and Prefix
 
-MooX::Pression assumes that all the classes and roles you are building
+Zydeco assumes that all the classes and roles you are building
 with it will be defined under the same namespace B<prefix>. For example
 "MyApp::Person" and "MyApp::Company" are both defined under the common
 prefix of "MyApp".
@@ -2080,15 +2080,15 @@ and from within the factory. Everywhere else, you should call
 C<< MyApp->new_person() >> instead.
 
 By default, the factory package and the prefix are the same: they are
-the caller that you imported MooX::Pression into. But they can be set
+the caller that you imported Zydeco into. But they can be set
 to whatever:
 
-  use MooX::Pression (
+  use Zydeco (
     prefix          => 'MyApp::Objects',
     factory_package => 'MyApp::Makers',
   );
 
-MooX::Pression assumes that you are defining all the classes and roles
+Zydeco assumes that you are defining all the classes and roles
 within this namespace prefix in a single Perl module file. This Perl
 module file would normally be named based on the prefix, so in the
 example above, it would be "MyApp/Objects.pm" and in the example from
@@ -2097,11 +2097,11 @@ the SYNOPSIS, it would be "MyApp.pm".
 But see also the documentation for C<include>.
 
 Of course, there is nothing to stop you from having multiple prefixes
-for different logical parts of a larger codebase, but MooX::Pression
+for different logical parts of a larger codebase, but Zydeco
 assumes that if it's been set up for a prefix, it owns that prefix and
 everything under it, and it's all defined in the same Perl module.
 
-Each object defined by MooX::Pression will have a C<FACTORY> method,
+Each object defined by Zydeco will have a C<FACTORY> method,
 so you can do:
 
   $person_object->FACTORY
@@ -2116,7 +2116,7 @@ And it will return the string "MyApp". This allows for stuff like:
 
 =head3 The Type Library
 
-While building your classes and objects, MooX::Pression will also build
+While building your classes and objects, Zydeco will also build
 type constraints for each of them. So for the "MyApp::Person" class
 above, it also builds a B<Person> type constraint. This can be used
 in Moo/Moose attribute definitions like:
@@ -2137,17 +2137,17 @@ it is defined entirely by "MyApp.pm".
 Your type library will be the same as your namespace prefix, with
 "::Types" added at the end. But you can change that:
 
-  use MooX::Pression (
+  use Zydeco (
     prefix          => 'MyApp::Objects',
     factory_package => 'MyApp::Makers',
     type_library    => 'MyApp::TypeLibrary',
   );
 
-It can sometimes be helpful to pre-warn MooX::Pression about the
+It can sometimes be helpful to pre-warn Zydeco about the
 types you're going to define before you define them, just so it
 is able to allow them as barewords in some places...
 
-  use MooX::Pression (
+  use Zydeco (
     prefix          => 'MyApp::Objects',
     factory_package => 'MyApp::Makers',
     type_library    => 'MyApp::TypeLibrary',
@@ -2227,7 +2227,7 @@ See also C<extends> as an alternative way of declaring inheritance.
 It is possible to prefix a class name with a plus sign:
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     class Person {
       has name;
       class +Employee {
@@ -2242,7 +2242,7 @@ the usual C<MyApp::Employee>.
 Classes can be declared as abstract:
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     abstract class Animal {
       class Cat;
       class Dog;
@@ -2278,7 +2278,7 @@ multimethods, or method modifiers, but otherwise functions as a role.
 (It may have C<requires> statements and define constants.)
 
   package MyApp;
-  use MooX::Pression;
+  use Zydeco;
   
   interface Serializer {
     requires serialize;
@@ -2323,14 +2323,14 @@ Not all MooseX/MouseX/MooX packages will work, but *X::StrictConstructor will.
 
 Although it is not possible to use the C<toolkit> keyword outside of
 C<class>, C<abstract class>, C<role>, and C<interface> blocks, it is
-possible to specify a default toolkit when you import MooX::Pression.
+possible to specify a default toolkit when you import Zydeco.
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     toolkit => 'Moose',
   );
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     toolkit => 'Mouse',
   );
@@ -2408,7 +2408,7 @@ The C<begin> keyword cannot be used outside of C<class>, C<abstract class>,
 C<role>, and C<interface> blocks, though it is possible to define a global
 default for it:
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     begin => sub {
       my ($package, $kind) = @_;
@@ -2441,7 +2441,7 @@ The C<end> keyword cannot be used outside of C<class>, C<abstract class>,
 C<role>, and C<interface> blocks, though it is possible to define a global
 default for it:
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     end => sub {
       my ($package, $kind) = @_;
@@ -2511,7 +2511,7 @@ pre-declared them.
     );
   }
 
-Note that when C<type> is a string, MooX::Pression will consult your
+Note that when C<type> is a string, Zydeco will consult your
 type library to figure out what it means.
 
 It is also possible to use C<< isa => 'SomeClass' >> or
@@ -2532,7 +2532,7 @@ For enumerations, you can define them like this:
     has status ( enum => ['alive', 'dead', 'undead'] );
   }
 
-MooX::Pression integrates support for L<MooX::Enumeration> (and
+Zydeco integrates support for L<MooX::Enumeration> (and
 L<MooseX::Enumeration>, but MouseX::Enumeration doesn't exist).
 
   class Person {
@@ -2557,7 +2557,7 @@ Checking C<< $bob->status eq 'alvie' >> is prone to typos, but
 C<< $bob->status_is_alvie >> will cause a runtime error because the
 method is not defined.
 
-MooX::Pression also integrates support for L<Sub::HandlesVia> allowing
+Zydeco also integrates support for L<Sub::HandlesVia> allowing
 you to delegate certain methods to unblessed references and non-reference
 values. For example:
 
@@ -2783,7 +2783,7 @@ have delegations and a default value.
 Private attributes use lexical variables, so are visible to subclasses
 only if the subclass definition is nested in the base class.
 
-Private attributes are available from MooX::Pression 0.400.
+Private attributes are available from Zydeco 0.400.
 
 =head3 C<< constant >>
 
@@ -2836,7 +2836,7 @@ bareword name for the method.
     ...;
   }
 
-MooX::Pression supports method signatures for named arguments and
+Zydeco supports method signatures for named arguments and
 positional arguments. A mixture of named and positional arguments
 is allowed, with some limitations. For anything more complicates,
 you should define the method with no signature at all, and unpack
@@ -2965,7 +2965,7 @@ pretend it is a hashref or arrayref.
 
 =head4 Signatures with Mixed Arguments
 
-Since MooX::Pression 0.200, you may mix named and positional arguments
+Since Zydeco 0.200, you may mix named and positional arguments
 with the following limitations:
 
 =over
@@ -3046,7 +3046,7 @@ signature, C<< $self >>, C<< $class >>, C<< @_ >>, and globals.
 It I<is> possible to use C<method> without a name to return an
 anonymous method (coderef):
 
-  use MooX::Pression prefix => 'MyApp';
+  use Zydeco prefix => 'MyApp';
   
   class MyClass {
     method get_method ($foo) {
@@ -3089,18 +3089,18 @@ Is this:
 
   method $x { ... }
 
-MooX::Pression will declare the variable C<< my $x >> for you, assign the
+Zydeco will declare the variable C<< my $x >> for you, assign the
 coderef to the variable, and you don't need to worry about a C<do> block
 to wrap it.
 
-This feature is available from MooX::Pression 0.400.
+This feature is available from Zydeco 0.400.
 
 =head4 Multimethods
 
 Multi methods should I<< Just Work [tm] >> if you prefix them with the
 keyword C<multi>
 
-  use MooX::Pression prefix => 'MyApp';
+  use Zydeco prefix => 'MyApp';
   
   class Widget {
     multi method foo :alias(quux) (Any $x) {
@@ -3274,7 +3274,7 @@ Commas may be used to modify multiple methods:
 
 The C<< :optimize >> attribute is supported for C<around>.
 
-Note that C<< SUPER:: >> won't work as expected in MooX::Pression, so
+Note that C<< SUPER:: >> won't work as expected in Zydeco, so
 C<around> should be used instead.
 
 Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
@@ -3404,7 +3404,7 @@ will be no C<< MyApp->new_appconfig >> method for creating new objects
 of that class.
 
 (People can still manually call C<< MyApp::AppConfig->new >> to get a new
-AppConfig object, but remember MooX::Pression discourages calling constructors
+AppConfig object, but remember Zydeco discourages calling constructors
 directly, and encourages you to use the factory package for instantiating
 objects!)
 
@@ -3498,7 +3498,7 @@ blocks.
 
 You can set a default version for all packages like this:
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     version => 1.0,
   );
@@ -3520,7 +3520,7 @@ It is used to indicate who is the maintainer of the package.
 Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
 blocks.
 
-  use MooX::Pression (
+  use Zydeco (
     ...,
     version   => 1.0,
     authority => 'cpan:TOBYINK',
@@ -3532,10 +3532,10 @@ will not be inherited.
 
 =head3 C<< include >>
 
-C<include> is the MooX::Pression equivalent of Perl's C<require>.
+C<include> is the Zydeco equivalent of Perl's C<require>.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     include Database;
     include Classes;
     include Roles;
@@ -3548,7 +3548,7 @@ file that included it.
 The names of the files to load are processsed using the same rules for
 prefixes as classes and roles (so MyApp::Database, etc in the example),
 and C<< @INC >> is searched just like C<require> and C<use> do, but
-instead of looking for a file called "MyApp/Database.pm", MooX::Pression
+instead of looking for a file called "MyApp/Database.pm", Zydeco
 will look for "MyApp/Database.pl" (yes, ".pl"). This naming convention
 ensures people won't accidentally load MyApp::Database using C<use>
 or C<require> because it isn't intended to be loaded outside the context
@@ -3565,7 +3565,7 @@ The file "MyApp/Database.pl" might look something like this:
   }
 
 Note that it doesn't start with a C<package> statement, nor
-C<use MooX::Pression>. It's just straight on to the definitions.
+C<use Zydeco>. It's just straight on to the definitions.
 There's no C<< 1; >> needed at the end.
 
 C<< use strict >> and C<< use warnings >> are safe to put in the
@@ -3579,24 +3579,24 @@ once, and there are I<no> checks to deal with cyclical inclusions.
 Inclusions are currently only supported at the top level, and not within
 class and role definitions.
 
-=head3 C<< MooX::Pression::PACKAGE_SPEC() >>
+=head3 C<< Zydeco::PACKAGE_SPEC() >>
 
 This function can be used while a class or role is being compiled to
 tweak the specification for the class/role.
 
   class Foo {
     has foo;
-    MooX::Pression::PACKAGE_SPEC->{has}{foo}{type} = Int;
+    Zydeco::PACKAGE_SPEC->{has}{foo}{type} = Int;
   }
 
 It returns a hashref of attributes, methods, etc. L<MooX::Press> should
-give you an idea about how the hashref is structured, but MooX::Pression
+give you an idea about how the hashref is structured, but Zydeco
 only supports a subset of what MooX::Press supports. For example, MooX::Press
-allows C<has> to be an arrayref or a hashref, but MooX::Pression only supports
-a hashref. The exact subset that MooX::Pression supports is subject to change
+allows C<has> to be an arrayref or a hashref, but Zydeco only supports
+a hashref. The exact subset that Zydeco supports is subject to change
 without notice.
 
-This can be used to access MooX::Press features that MooX::Pression doesn't
+This can be used to access MooX::Press features that Zydeco doesn't
 expose.
 
 =head2 Helper Subs
@@ -3606,7 +3606,7 @@ classes and roles. This is true, but that doesn't mean that it has no
 use.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     sub helper_function { ... }
     
@@ -3636,7 +3636,7 @@ like logging, L<List::Util>/L<Scalar::Util> sorts of functions, and
 so on.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     use List::Util qw( any all first reduce );
     # the above functions are now available within
@@ -3666,14 +3666,14 @@ Though consider using L<Sub::Quote> if you're using Moo.
 
 =head2 Utilities
 
-MooX::Pression also exports constants C<true> and C<false> into your
+Zydeco also exports constants C<true> and C<false> into your
 namespace. These show clearer boolean intent in code than using 1 and 0.
 
-MooX::Pression exports C<rw>, C<ro>, C<rwp>, and C<lazy> constants
+Zydeco exports C<rw>, C<ro>, C<rwp>, and C<lazy> constants
 which make your attribute specs a little cleaner looking.
 
-MooX::Pression exports C<blessed> from L<Scalar::Util> because that can
-be handy to have, and C<confess> from L<Carp>. MooX::Pression's copy
+Zydeco exports C<blessed> from L<Scalar::Util> because that can
+be handy to have, and C<confess> from L<Carp>. Zydeco's copy
 of C<confess> is super-powered and runs its arguments through C<sprintf>.
 
   before vote {
@@ -3682,7 +3682,7 @@ of C<confess> is super-powered and runs its arguments through C<sprintf>.
     }
   }
 
-MooX::Pression turns on strict, warnings, and the following modern Perl
+Zydeco turns on strict, warnings, and the following modern Perl
 features:
 
   # Perl 5.14 and Perl 5.16
@@ -3700,7 +3700,7 @@ so are less useful in object-oriented code.
 You can, of course, turn on extra features yourself.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     use feature qw( lexical_subs postderef );
     
     ...;
@@ -3712,17 +3712,17 @@ include a signature. For non-optimized methods with a signature, a
 wrapper is installed that handles checks, coercions, and defaults.
 C<< __SUB__ >> will point to the "inner" sub, minus the wrapper.)
 
-MooX::Pression exports L<Syntax::Keyword::Try> for you. Useful to have.
+Zydeco exports L<Syntax::Keyword::Try> for you. Useful to have.
 
 And last but not least, it exports all the types, C<< is_* >> functions,
 and C<< assert_* >> functions from L<Types::Standard>,
 L<Types::Common::String>, and L<Types::Common::Numeric>.
 
-As of version 0.304, you can choose which parts of MooX::Pression you
+As of version 0.304, you can choose which parts of Zydeco you
 import:
 
   package MyApp {
-    use MooX::Pression keywords => [qw/
+    use Zydeco keywords => [qw/
       -booleans
       -privacy
       -utils
@@ -3791,7 +3791,7 @@ Anonymous roles work in much the same way.
 =head3 Parameterizable classes
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     class Animal {
       has name;
@@ -3841,7 +3841,7 @@ which case the classes they generate will inherit from the outer
 class.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     class Animal {
       has name;
@@ -3875,7 +3875,7 @@ Anonymous parameterizable classes are possible:
 Often it makes more sense to parameterize roles than classes.
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     
     class Animal {
       has name;
@@ -3897,11 +3897,11 @@ Often it makes more sense to parameterize roles than classes.
 
 Anonymous parameterizable roles are possible.
 
-=head2 MooX::Pression vs Moops
+=head2 Zydeco vs Moops
 
-MooX::Pression has fewer dependencies than Moops, and crucially doesn't
+Zydeco has fewer dependencies than Moops, and crucially doesn't
 rely on L<Package::Keyword> and L<Devel::CallParser> which have... issues.
-MooX::Pression uses Damian Conway's excellent L<PPR> to handle most parsing
+Zydeco uses Damian Conway's excellent L<PPR> to handle most parsing
 needs, so parsing should be more predictable.
 
 Moops is faster though.
@@ -3916,7 +3916,7 @@ Moops:
     ...;
   }
 
-MooX::Pression:
+Zydeco:
 
   class Foo::Bar {
     version 1.0;
@@ -3924,9 +3924,9 @@ MooX::Pression:
     with Bar;
   }
 
-Moops and MooX::Pression use different logic for determining whether a class
+Moops and Zydeco use different logic for determining whether a class
 name is "absolute" or "relative". In Moops, classes containing a "::" are seen
-as absolute class names; in MooX::Pression, only classes I<starting with> "::"
+as absolute class names; in Zydeco, only classes I<starting with> "::"
 are taken to be absolute; all others are given the prefix.
 
 Moops:
@@ -3943,10 +3943,10 @@ Moops:
     }
   }
 
-MooX::Pression:
+Zydeco:
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     class Foo {
       class Bar {
         class Baz {
@@ -3972,11 +3972,11 @@ Moops:
     }
   }
 
-MooX::Pression:
+Zydeco:
 
   use feature 'say';
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     use List::Util qw(uniq);
     class Foo {
       say __PACKAGE__;         # MyApp
@@ -3985,14 +3985,14 @@ MooX::Pression:
     }
   }
 
-This is why you can't use C<sub> to define methods in MooX::Pression.
-You need to use the C<method> keyword. In MooX::Pression, all the code
+This is why you can't use C<sub> to define methods in Zydeco.
+You need to use the C<method> keyword. In Zydeco, all the code
 in the class definition block is still executing in the parent
 package's namespace!
 
 =head3 Multimethods
 
-Moops/Kavorka multimethods are faster, but MooX::Pression is smarter at
+Moops/Kavorka multimethods are faster, but Zydeco is smarter at
 picking the best candidate to dispatch to, and intelligently selecting
 candidates across inheritance hierarchies and role compositions.
 
@@ -4003,7 +4003,7 @@ allows you to specify multiple names for named parameters, allows you
 to rename the invocant, allows you to give methods and parameters
 attributes, allows you to specify a method's return type, etc, etc.
 
-MooX::Pression's C<method> keyword is unlikely to ever offer as many
+Zydeco's C<method> keyword is unlikely to ever offer as many
 features as that. It is unlikely to offer many more features than it
 currently offers.
 
@@ -4013,20 +4013,20 @@ however you need to.
 
 =head3 Lexical accessors
 
-MooX::Pression has tighter integration with L<Lexical::Accessor>,
+Zydeco has tighter integration with L<Lexical::Accessor>,
 allowing you to use the same keyword C<has> to declare private
 and public attributes.
 
 =head3 Factories
 
-MooX::Pression puts an emphasis on having a factory package for instantiating
+Zydeco puts an emphasis on having a factory package for instantiating
 objects. Moops didn't have anything similar.
 
 =head3 C<augment> and C<override>
 
 These are L<Moose> method modifiers that are not implemented by L<Moo>.
 Moops allows you to use these in Moose and Mouse classes, but not Moo
-classes. MooX::Pression simply doesn't support them.
+classes. Zydeco simply doesn't support them.
 
 =head3 Type Libraries
 
@@ -4034,14 +4034,14 @@ Moops allowed you to declare multiple type libraries, define type
 constraints in each, and specify for each class and role which type
 libraries you want it to use.
 
-MooX::Pression automatically creates a single type library for all
+Zydeco automatically creates a single type library for all
 your classes and roles within a module to use, and automatically
 populates it with the types it thinks you might want.
 
 If you need to use other type constraints:
 
   package MyApp {
-    use MooX::Pression;
+    use Zydeco;
     # Just import types into the factory package!
     use Types::Path::Tiny qw( Path );
     
@@ -4066,7 +4066,7 @@ Moops:
     define PI = 3.2;
   }
 
-MooX::Pression:
+Zydeco:
 
   class Foo {
     constant PI = 3.2;
@@ -4075,23 +4075,23 @@ MooX::Pression:
 =head3 Parameterizable classes and roles
 
 These were always on my todo list for Moops; I doubt they'll ever be done.
-They work nicely in MooX::Pression though.
+They work nicely in Zydeco though.
 
 =head1 BUGS
 
 Please report any bugs to
-L<http://rt.cpan.org/Dist/Display.html?Queue=MooX-Pression>.
+L<http://rt.cpan.org/Dist/Display.html?Queue=Zydeco>.
 
 =head1 TODO
 
 =head2 Plugin system
 
-MooX::Pression can often load MooX/MouseX/MooseX plugins and work
+Zydeco can often load MooX/MouseX/MooseX plugins and work
 fine with them, but some things won't work, like plugins that rely on
 being able to wrap C<has>. So it would be nice to have a plugin system
 that extensions can hook into.
 
-If you're interested in extending MooX::Pression, file a bug report about
+If you're interested in extending Zydeco, file a bug report about
 it and let's have a conversation about the best way for that to happen.
 I probably won't start a plugin API until someone actually wants to
 write a plugin, because that will give me a better idea about what kind

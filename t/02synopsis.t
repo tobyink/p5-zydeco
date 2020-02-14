@@ -4,7 +4,7 @@ use warnings;
 use Test::More tests => 2;
 
 package MyApp {
-	use MooX::Pression (
+	use Zydeco (
 		version    => 0.1,
 		authority  => 'cpan:MYPAUSEID',
 	);

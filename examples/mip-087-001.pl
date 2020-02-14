@@ -3,7 +3,7 @@ use strict;
 use warnings;
 
 package Local {
-	use MooX::Pression;
+	use Zydeco;
 	
 	class Employee {
 		has name  (type => Str, required => true);

@@ -2,7 +2,7 @@
 
 @prefix : <http://ontologi.es/doap-deps#>.
 
-`MooX-Pression`
+`Zydeco`
 	:runtime-requirement    [ :on "perl 5.014000"^^:CpanId ];
 	:runtime-requirement    [ :on "Import::Into"^^:CpanId ];
 	:runtime-requirement    [ :on "MooX::Press 0.045"^^:CpanId ];

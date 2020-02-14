@@ -2,7 +2,7 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Fatal;
-use MooX::Pression prefix => 'Local';
+use Zydeco prefix => 'Local';
 
 class Foo;
 
