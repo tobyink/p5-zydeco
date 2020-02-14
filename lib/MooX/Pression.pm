@@ -186,7 +186,7 @@ our $GRAMMAR = qr{
 		(?<MxpDecoratedIdentifier>
 			
 			(?: \+ )?                                     # CAPTURE:plus
-			(?: \* )?                                     # CAPTURE:asterisk
+			(?: \* | \$ )?                                # CAPTURE:asterisk
 			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?: \! | \? )?                                # CAPTURE:postfix
 		)#</MxpDecoratedIdentifier>
@@ -1151,12 +1151,26 @@ sub _handle_has_keyword {
 	for my $name (@names) {
 		$name =~ s/^\+\*/+/;
 		$name =~ s/^\*//;
-		push @r, sprintf(
-			'q[%s]->_has(%s, %s)',
-			$me,
-			($name =~ /^\{/) ? "scalar(do $name)" : B::perlstring($name),
-			$rawspec,
-		);
+		
+		if ($name =~ /^\$(.+)$/) {
+			my $display_name = $1;
+			unshift @r, "my $name";
+			push @r, sprintf(
+				'q[%s]->_has(%s, is => "private", accessor => \\%s, %s)',
+				$me,
+				($display_name =~ /^\{/) ? "scalar(do $display_name)" : B::perlstring($display_name),
+				$name,
+				$rawspec,
+			);			
+		}
+		else {
+			push @r, sprintf(
+				'q[%s]->_has(%s, %s)',
+				$me,
+				($name =~ /^\{/) ? "scalar(do $name)" : B::perlstring($name),
+				$rawspec,
+			);
+		}
 	}
 	join ";", @r;
 }
@@ -1512,10 +1526,10 @@ sub import {
 		
 		$$ref =~ _fetch_re('MxpHasSyntax', anchor => 'start') or $me->_syntax_error(
 			'attribute declaration',
-			'has <name> (<spec>) = <default>',
-			'has <name> (<spec>)',
-			'has <name> = <default>',
-			'has <name>',
+			'has <names> (<spec>) = <default>',
+			'has <names> (<spec>)',
+			'has <names> = <default>',
+			'has <names>',
 			$ref,
 		);
 		
@@ -1600,10 +1614,10 @@ sub import {
 		
 			$$ref =~ _fetch_re('MxpModifierSyntax', anchor => 'start') or $me->_syntax_error(
 				"$kw method modifier declaration",
-				"$kw <name> <attributes> (<signature>) { <block> }",
-				"$kw <name> (<signature>) { <block> }",
-				"$kw <name> <attributes> { <block> }",
-				"$kw <name> { <block> }",
+				"$kw <names> <attributes> (<signature>) { <block> }",
+				"$kw <names> (<signature>) { <block> }",
+				"$kw <names> <attributes> { <block> }",
+				"$kw <names> { <block> }",
 				$ref,
 			);
 			
@@ -2463,8 +2477,9 @@ in a parent class.
     }
   }
 
-C<rw>, C<rwp>, C<ro>, C<lazy>, C<bare>, C<true>, and C<false> are allowed as
-barewords for readability, but C<is> is optional, and defaults to C<rw>.
+C<rw>, C<rwp>, C<ro>, C<lazy>, C<bare>, C<private>, C<true>, and C<false>
+are allowed as barewords for readability, but C<is> is optional, and defaults
+to C<rw>.
 
 Note C<type> instead of C<isa>. Any type constraints from L<Types::Standard>,
 L<Types::Common::Numeric>, and L<Types::Common::String> will be avaiable as
@@ -2653,6 +2668,107 @@ The names of attributes can start with an asterisk:
 This adds no extra meaning, but is supported for consistency with the syntax
 of named parameters in method signatures. (Depending on your text editor, it
 may also improve syntax highlighting.)
+
+=head4 Private attributes
+
+If an attribute name starts with a dollar sign, it is a private (lexical)
+attribute. Private attributes cannot be set in the constructor, and cannot
+be directly accessed outside the class's lexical scope.
+
+  class Foo {
+    has $ua = HTTP::Tiny->new;
+    
+    method fetch_data ( Str $url ) {
+      my $response = $self->$ua->get($url);
+      $response->{is_success} or confess('request failed');
+      return $response->{content};
+    }
+  }
+
+Note how C<< $self->$ua >> is still called as a method. You don't just do
+C<< $ua->get() >>. The invocant is still required, just like it would be
+with a normal public attribute:
+
+  class Foo {
+    has ua = HTTP::Tiny->new;
+    
+    method fetch_data ( Str $url ) {
+      my $response = $self->ua->get($url);
+      $response->{is_success} or confess('request failed');
+      return $response->{content};
+    }
+  }
+
+Private attributes can have delegated methods (C<handles>):
+
+  class Foo {
+    has $ua (
+      default => sub { HTTP::Tiny->new },
+      handles => [
+        http_get  => 'get',
+        http_post => 'post',
+      ],
+    );
+    
+    method fetch_data ( Str $url ) {
+      my $response = $self->http_get($url);
+      $response->{is_success} or confess('request failed');
+      return $response->{content};
+    }
+  }
+
+These can even be made lexical too:
+
+  class Foo {
+    my ($http_get, $http_post);  # predeclare
+    
+    has $ua (
+      default => sub { HTTP::Tiny->new },
+      handles => [
+        \$http_get  => 'get',
+        \$http_post => 'post',
+      ],
+    );
+    
+    method fetch_data ( Str $url ) {
+      my $response = $self->$http_get($url);
+      $response->{is_success} or confess('request failed');
+      return $response->{content};
+    }
+  }
+
+Note how an arrayref is used for C<handles> instead of a hashref. This
+is because scalarrefs don't work as hashref keys.
+
+Although constructors ignore private attributes, you may set them in a
+factory method.
+
+  class Foo {
+    has $ua;
+    
+    factory new_foo (%args) {
+      my $instance = $class->new(%args);
+      $instance->$ua( HTTP::Tiny->new );
+      return $instance;
+    }
+  }
+
+C<< has $foo >> is just a shortcut for:
+
+  my $foo;
+  has foo => (is => "private", accessor => \$foo);
+
+You can use C<< is => "private" >> to create even I<more> private attributes
+without even having that lexical accessor:
+
+  has foo => (is => "private");
+
+If it seems like an attribute that can't be set in the constructor and
+doesn't have accessors would be useless, you're wrong. Because it can still
+have delegations and a default value.
+
+Private attributes use lexical variables, so are visible to subclasses
+only if the subclass definition is nested in the base class.
 
 =head3 C<< constant >>
 
