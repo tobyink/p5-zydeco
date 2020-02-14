@@ -1989,13 +1989,13 @@ __END__
 
 =head1 NAME
 
-Zydeco - express yourself through moo
+Zydeco - Jazz up your Perl
 
 =head1 SYNOPSIS
 
 MyApp.pm
 
-  use v5.18;
+  use v5.14;
   use strict;
   use warnings;
   
@@ -2026,7 +2026,7 @@ MyApp.pm
 
 my_script.pl
 
-  use v5.18;
+  use v5.14;
   use strict;
   use warnings;
   use MyApp;
@@ -2043,24 +2043,45 @@ my_script.pl
 
 =head1 DESCRIPTION
 
-L<Zydeco> is kind of like L<Moops>; a marrying together of L<Moo>
-with L<Type::Tiny> and some keyword declaration magic. Instead of being
-built on L<Kavorka>, L<Parse::Keyword>, L<Keyword::Simple> and a whole
-heap of crack, it is built on L<MooX::Press>, L<Keyword::Simple>, and L<PPR>.
-I'm not saying there isn't some crazy stuff going on under the hood, but
-it ought to be a little more maintainable.
+Zydeco is a Perl module to jazz up your object-oriented programming.
+It fuses together:
 
-Some of the insane features of Moops have been dialled back, and others
-have been amped up.
+=over
 
-It's more opinionated about API design and usage than Moops is, but in
-most cases, it should be fairly easy to port Moops code to Zydeco.
+=item *
 
-Zydeco requires Perl 5.18.0 or above. It may work on Perl 5.14.x
-and Perl 5.16.x partly, but there are likely to be issues.
+Classes, roles, and interfaces, including parameterizable classes and roles
+(a.k.a. class generators and role generators).
 
-L<MooX::Press> is a less magic version of Zydeco and only requires
-Perl 5.8.8 or above.
+=item *
+
+Factories to help your objects make other objects.
+
+=item *
+
+Methods with signatures, type constraints, and coercion.
+
+=item *
+
+Method modifiers to easily wrap or override inherited methods.
+
+=item *
+
+Multimethods.
+
+=item *
+
+Powerful delegation features.
+
+=item *
+
+True private methods and attributes.
+
+=item *
+
+Syntactic sugar as sweet as pecan pie.
+
+=back
 
 =head2 Important Concepts
 
@@ -3899,12 +3920,12 @@ Anonymous parameterizable roles are possible.
 
 =head2 Zydeco vs Moops
 
-Zydeco has fewer dependencies than Moops, and crucially doesn't
-rely on L<Package::Keyword> and L<Devel::CallParser> which have... issues.
+Zydeco has fewer dependencies than Moops, and crucially doesn't rely on
+L<Package::Keyword> and L<Devel::CallParser> which have... issues.
 Zydeco uses Damian Conway's excellent L<PPR> to handle most parsing
 needs, so parsing should be more predictable.
 
-Moops is faster though.
+Moops is faster in most circumstances though.
 
 Here are a few key syntax and feature differences.
 
@@ -4100,10 +4121,11 @@ of API is required.
 =head1 SEE ALSO
 
 Less magic version:
-L<MooX::Press>, L<portable::loader>.
+L<MooX::Press>.
 
 Important underlying technologies:
-L<Moo>, L<Type::Tiny::Manual>.
+L<Moo>, L<Type::Tiny::Manual>, L<Sub::HandlesVia>, L<Sub::MultiMethod>,
+L<Lexical::Accessor>, L<Syntax::Keyword::Try>.
 
 Similar modules:
 L<Moops>, L<Kavorka>, L<Dios>, L<MooseX::Declare>.
