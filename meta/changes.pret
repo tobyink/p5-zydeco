@@ -200,3 +200,11 @@
 	changeset [
 		item "Require MooX::Press 0.044 to avoid test failures."^^Packaging;
 	].
+
+`MooX-Pression 0.400 cpan:TOBYINK`
+	issued  2020-02-14;
+	changeset [
+		item "Support private/lexical attributes with `has $attr`."^^Addition;
+		item "Support private/lexical methods with `method $name`."^^Addition;
+		item "Import option `keywords` to limit which keywords you import."^^Addition;
+	].
