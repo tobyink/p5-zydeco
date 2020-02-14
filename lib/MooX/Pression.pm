@@ -1174,7 +1174,7 @@ sub _handle_has_keyword {
 				($display_name =~ /^\{/) ? "scalar(do $display_name)" : B::perlstring($display_name),
 				$name,
 				$rawspec,
-			);			
+			);
 		}
 		else {
 			push @r, sprintf(
@@ -1315,7 +1315,7 @@ sub import {
 	warnings->import::into($caller);
 	MooX::Press::Keywords->import::into($caller, $_)
 		for grep $want{$_}, qw(-booleans -privacy -util);
-	Syntax::Keyword::Try->import::into($caller) if $want{try};	
+	Syntax::Keyword::Try->import::into($caller) if $want{try};
 	if ($] >= 5.018) {
 		feature->import::into($caller, qw( say state unicode_strings unicode_eval evalbytes current_sub fc ))
 			if $want{-features};
