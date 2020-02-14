@@ -8,7 +8,7 @@
 	:runtime-requirement    [ :on "MooX::Press 0.046"^^:CpanId ];
 	:runtime-requirement    [ :on "PPR"^^:CpanId ];
 	:runtime-requirement    [ :on "Keyword::Simple"^^:CpanId ];
-	:runtime-requirement    [ :on "B::Hooks::EndOfScope"^^:CpanId ];
+	:runtime-requirement    [ :on "B::Hooks::EndOfScope 0.24"^^:CpanId ];
 	:runtime-requirement    [ :on "Exporter::Tiny 1.000000"^^:CpanId ];
 	:runtime-requirement    [ :on "Devel::StrictMode"^^:CpanId ];
 	:runtime-requirement    [ :on "Syntax::Keyword::Try 0.11"^^:CpanId ];
