@@ -213,4 +213,6 @@
 	issued  2020-02-14;
 	changeset [
 		item "MooX::Pression is now called Zydeco."^^Packaging;
+		item "Restructure documentation."^^Documentation;
+		item "Better description."^^Documentation;
 	].
