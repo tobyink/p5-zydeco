@@ -2177,9 +2177,9 @@ is able to allow them as barewords in some places...
 
 See also L<Type::Tiny::Manual>.
 
-=head2 Keywords
+=head1 KEYWORDS
 
-=head3 C<< class >>
+=head2 C<< class >>
 
 Define a very basic class:
 
@@ -2220,7 +2220,7 @@ It is possible to create a class without the prefix:
 
 The class name will now be "Person" instead of "MyApp::Person"!
 
-=head4 Nested classes
+=head3 Nested classes
 
 C<class> blocks can be nested. This establishes an inheritance heirarchy.
 
@@ -2260,6 +2260,8 @@ It is possible to prefix a class name with a plus sign:
 Now the employee class will be named C<MyApp::Person::Employee> instead of
 the usual C<MyApp::Employee>.
 
+=head3 Abstract classes
+
 Classes can be declared as abstract:
 
   package MyApp {
@@ -2275,7 +2277,7 @@ an Animal instance directly; but you can create instances of the subclasses.
 It is usually better to use roles than abstract classes, but sometimes the
 abstract class makes more intuitive sense.
 
-=head3 C<< role >>
+=head2 C<< role >>
 
 Define a very basic role:
 
@@ -2292,7 +2294,7 @@ This is just the same as C<class> but defines a role instead of a class.
 Roles cannot be nested within each other, nor can roles be nested in classes,
 nor classes in roles.
 
-=head3 C<< interface >>
+=head2 C<< interface >>
 
 An interface is a lightweight role. It cannot define attributes, methods,
 multimethods, or method modifiers, but otherwise functions as a role.
@@ -2318,7 +2320,7 @@ multimethods, or method modifiers, but otherwise functions as a role.
   my $obj = MyApp->new_myjson;
   $obj->does('MyApp::Serializer');   # true
 
-=head3 C<< toolkit >>
+=head2 C<< toolkit >>
 
 Use a different toolkit instead of Moo.
 
@@ -2356,7 +2358,7 @@ possible to specify a default toolkit when you import Zydeco.
     toolkit => 'Mouse',
   );
 
-=head3 C<< extends >>
+=head2 C<< extends >>
 
 Defines a parent class. Only for use within C<class> and C<abstract class>
 blocks.
@@ -2371,9 +2373,9 @@ This works:
     extends ::Animal;   # no prefix
   }
 
-=head3 C<< with >>
+=head2 C<< with >>
 
-Composes roles.
+Composes roles and interfaces.
 
   class Person {
     with Employable, Consumer;
@@ -2389,12 +2391,8 @@ Composes roles.
     with Worker, Payable;
   }
 
-Because roles are processed before classes, you can compose roles into classes
-where the role is defined later in the file. But if you compose one role into
-another, you must define them in a sensible order.
-
-It is possible to compose a role that does not exist by adding a question mark
-to the end of it:
+It is possible to compose a role which does not have its own definition by
+adding a question mark to the end of the name:
 
   class Person {
     with Employable, Consumer?;
@@ -2409,7 +2407,7 @@ This is equivalent to declaring an empty role.
 The C<with> keyword cannot be used outside of C<class>, C<abstract class>,
 C<role>, and C<interface> blocks.
 
-=head3 C<< begin >>
+=head2 C<< begin >>
 
 This code gets run early on in the definition of a class or role.
 
@@ -2445,7 +2443,7 @@ If C<class> definitions are nested, C<begin> blocks will be inherited by
 child classes. If a parent class is specified via C<extends>, C<begin>
 blocks will not be inherited.
 
-=head3 C<< end >>
+=head2 C<< end >>
 
 This code gets run late in the definition of a class or role.
 
@@ -2478,7 +2476,7 @@ If C<class> definitions are nested, C<end> blocks will be inherited by
 child classes. If a parent class is specified via C<extends>, C<end>
 blocks will not be inherited.
 
-=head3 C<< has >>
+=head2 C<< has >>
 
 Defines an attribute.
 
@@ -2514,6 +2512,53 @@ in a parent class.
 C<rw>, C<rwp>, C<ro>, C<lazy>, C<bare>, C<private>, C<true>, and C<false>
 are allowed as barewords for readability, but C<is> is optional, and defaults
 to C<rw>.
+
+The names of attributes can start with an asterisk:
+
+  has *foo;
+
+This adds no extra meaning, but is supported for consistency with the syntax
+of named parameters in method signatures. (Depending on your text editor, it
+may also improve syntax highlighting.)
+
+If you need to decide an attribute name on-the-fly, you can replace the
+name with a block that returns the name as a string.
+
+  class Employee {
+    extends Person;
+    has {
+      $ENV{LOCALE} eq 'GB'
+        ? 'national_insurance_no'
+        : 'social_security_no'
+    } (type => Str)
+  }
+  
+  my $bob = Employee->new(
+    name               => 'Bob',
+    social_security_no => 1234,
+  );
+
+You can think of the syntax as being kind of like C<print>.
+
+  print BAREWORD_FILEHANDLE @strings;
+  print { block_returning_filehandle(); } @strings;
+
+The block is called in scalar context, so you'll need a loop to define a list
+like this:
+
+  class Person {
+    my @attrs = qw( name age );
+    
+    # this does not work
+    has {@attrs} ( required => true );
+    
+    # this works
+    for my $attr (@attrs) {
+      has {$attr} ( required => true );
+    }
+  }
+
+=head3 Type constraints for attributes
 
 Note C<type> instead of C<isa>. Any type constraints from L<Types::Standard>,
 L<Types::Common::Numeric>, and L<Types::Common::String> will be avaiable as
@@ -2552,6 +2597,8 @@ For enumerations, you can define them like this:
     ...;
     has status ( enum => ['alive', 'dead', 'undead'] );
   }
+
+=head3 Delegation
 
 Zydeco integrates support for L<MooX::Enumeration> (and
 L<MooseX::Enumeration>, but MouseX::Enumeration doesn't exist).
@@ -2600,6 +2647,10 @@ values. For example:
       }
     }
   }
+
+C<handles> otherwise works as you'd expect from Moo and Moose.
+
+=head3 Required versus optional attributes and defaults
 
 A trailing C<< ! >> indicates a required attribute.
 
@@ -2650,6 +2701,8 @@ made eager using the spec. (It is almost certainly a bad idea to do so though.)
     has display_name ( lazy => false ) = $self->name;
   }
 
+=head3 Specifying multiple attributes at once
+
 Commas may be used to separate multiple attributes:
 
   class WidgetCollection {
@@ -2658,52 +2711,7 @@ Commas may be used to separate multiple attributes:
 
 The specification and defaults are applied to every attribute in the list.
 
-If you need to decide an attribute name on-the-fly, you can replace the
-name with a block that returns the name as a string.
-
-  class Employee {
-    extends Person;
-    has {
-      $ENV{LOCALE} eq 'GB'
-        ? 'national_insurance_no'
-        : 'social_security_no'
-    } (type => Str)
-  }
-  
-  my $bob = Employee->new(
-    name               => 'Bob',
-    social_security_no => 1234,
-  );
-
-You can think of the syntax as being kind of like C<print>.
-
-  print BAREWORD_FILEHANDLE @strings;
-  print { block_returning_filehandle(); } @strings;
-
-The block is called in scalar context, so you'll need a loop to define a list
-like this:
-
-  class Person {
-    my @attrs = qw( name age );
-    
-    # this does not work
-    has {@attrs} ( required => true );
-    
-    # this works
-    for my $attr (@attrs) {
-      has {$attr} ( required => true );
-    }
-  }
-
-The names of attributes can start with an asterisk:
-
-  has *foo;
-
-This adds no extra meaning, but is supported for consistency with the syntax
-of named parameters in method signatures. (Depending on your text editor, it
-may also improve syntax highlighting.)
-
-=head4 Private attributes
+=head3 Private attributes
 
 If an attribute name starts with a dollar sign, it is a private (lexical)
 attribute. Private attributes cannot be set in the constructor, and cannot
@@ -2804,9 +2812,7 @@ have delegations and a default value.
 Private attributes use lexical variables, so are visible to subclasses
 only if the subclass definition is nested in the base class.
 
-Private attributes are available from Zydeco 0.400.
-
-=head3 C<< constant >>
+=head2 C<< constant >>
 
 Defines a constant.
 
@@ -2821,7 +2827,7 @@ C<< $person_object->latin_name >> will return 'Homo sapiens'.
 Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
 will define a constant in the caller package. (That is, usually the factory.)
 
-=head3 C<< method >>
+=head2 C<< method >>
 
 Defines a method.
 
@@ -2863,7 +2869,7 @@ is allowed, with some limitations. For anything more complicates,
 you should define the method with no signature at all, and unpack
 C<< @_ >> within the body of the method.
 
-=head4 Signatures for Named Arguments
+=head3 Signatures for Named Arguments
 
   class Person {
     has spouse;
@@ -2952,7 +2958,7 @@ Methods with named arguments can be called with a hash or hashref.
   $alice->marry(  partner => $bob  );      # okay
   $alice->marry({ partner => $bob });      # also okay
 
-=head4 Signatures for Positional Arguments
+=head3 Signatures for Positional Arguments
 
   method marry ( Person $partner, Object $date? ) {
     $self->spouse( $partner );
@@ -2984,10 +2990,9 @@ pretend it is a hashref or arrayref.
     ...;
   }
 
-=head4 Signatures with Mixed Arguments
+=head3 Signatures with Mixed Arguments
 
-Since Zydeco 0.200, you may mix named and positional arguments
-with the following limitations:
+You may mix named and positional arguments with the following limitations:
 
 =over
 
@@ -3032,7 +3037,7 @@ off the head and tail. We need to know how many elements to splice off
 each end, so that is why there are restrictions on slurpies and optional
 parameters.
 
-=head4 Empty Signatures
+=head3 Empty Signatures
 
 There is a difference between the following two methods:
 
@@ -3049,9 +3054,9 @@ deal with C<< @_ >> in the body of the method. In the second, there
 is a signature, but it is a signature showing that the method expects
 no arguments (other than the invocant of course).
 
-=head4 Optimizing Methods
+=head3 Optimizing Methods
 
-For a slight compiled-time penalty, you can improve the speed which
+For a slight compile-time penalty, you can improve the speed which
 methods run at using the C<< :optimize >> attribute:
 
   method foo :optimize (...) {
@@ -3061,8 +3066,10 @@ methods run at using the C<< :optimize >> attribute:
 Optimized methods must not close over any lexical (C<my> or C<our>)
 variables; they can only access the variables declared in their,
 signature, C<< $self >>, C<< $class >>, C<< @_ >>, and globals.
+They cannot access private attributes unless those private attributes
+have public accessors.
 
-=head4 Anonymous Methods
+=head3 Anonymous Methods
 
 It I<is> possible to use C<method> without a name to return an
 anonymous method (coderef):
@@ -3100,7 +3107,7 @@ A workaround is to wrap it in a C<< do { ... } >> block.
 
   my $x = do { method { ... } };
 
-=head4 Private methods
+=head3 Private methods
 
 A shortcut for the pattern of:
 
@@ -3114,9 +3121,7 @@ Zydeco will declare the variable C<< my $x >> for you, assign the
 coderef to the variable, and you don't need to worry about a C<do> block
 to wrap it.
 
-This feature is available from Zydeco 0.400.
-
-=head4 Multimethods
+=head3 Multimethods
 
 Multi methods should I<< Just Work [tm] >> if you prefix them with the
 keyword C<multi>
@@ -3138,16 +3143,13 @@ keyword C<multi>
   
   $thing->quux( {} );      # Buzz
 
-This feature requires L<MooX::Press> 0.035 and L<Sub::MultiMethod> to be
-installed.
-
 Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
 C<multi method> will define a multi method in the caller package. (That is,
 usually the factory.)
 
 Multimethods cannot be anonymous or private.
 
-=head3 C<< requires >>
+=head2 C<< requires >>
 
 Indicates that a role requires classes to fulfil certain methods.
 
@@ -3192,7 +3194,7 @@ Is a shorthand for this:
 
 Can only be used in C<role> and C<interface> blocks.
 
-=head3 C<< before >>
+=head2 C<< before >>
 
   before marry {
     say "Speak now or forever hold your peace!";
@@ -3227,7 +3229,7 @@ Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
 and C<interface> blocks, modifying methods in the caller package, which is
 usually the factory package.
 
-=head3 C<< after >>
+=head2 C<< after >>
 
 There's not much to say about C<after>. It's just like C<before>.
 
@@ -3255,7 +3257,7 @@ Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
 and C<interface> blocks, modifying methods in the caller package, which is
 usually the factory package.
 
-=head3 C<< around >>
+=head2 C<< around >>
 
 The C<around> method modifier is somewhat more interesting.
 
@@ -3302,7 +3304,7 @@ Method modifiers do work outside of C<class>, C<abstract class>, C<role>,
 and C<interface> blocks, modifying methods in the caller package, which is
 usually the factory package.
 
-=head3 C<< factory >>
+=head2 C<< factory >>
 
 The C<factory> keyword is used to define alternative constructors for
 your class.
@@ -3406,9 +3408,9 @@ The C<< :optimize >> attribute is supported for C<factory>.
 
 The C<factory> keyword can only be used inside C<class> blocks.
 
-=head4 Implementing a singleton
+=head3 Implementing a singleton
 
-Factories make it pretty easy to implement a singleton.
+Factories make it pretty easy to implement the singleton pattern.
 
   class AppConfig {
     ...;
@@ -3429,7 +3431,7 @@ AppConfig object, but remember Zydeco discourages calling constructors
 directly, and encourages you to use the factory package for instantiating
 objects!)
 
-=head3 C<< type_name >>
+=head2 C<< type_name >>
 
   class Homo::Sapiens {
     type_name Human;
@@ -3441,7 +3443,7 @@ type library will be called B<Human> instead of B<Homo_Sapiens>.
 Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
 blocks.
 
-=head3 C<< coerce >>
+=head2 C<< coerce >>
 
   class Person {
     has name   ( type => Str, required => true );
@@ -3494,7 +3496,7 @@ The C<< :optimize >> attribute is not currently supported for C<coerce>.
 
 Can only be used in C<class> blocks.
 
-=head3 C<< overload >>
+=head2 C<< overload >>
 
   class Collection {
     has items = [];
@@ -3506,7 +3508,7 @@ processing.
 
 Can only be used in C<class> blocks.
 
-=head3 C<< version >>
+=head2 C<< version >>
 
   class Person {
     version 1.0;
@@ -3528,7 +3530,7 @@ If C<class> definitions are nested, C<version> will be inherited by
 child classes. If a parent class is specified via C<extends>, C<version>
 will not be inherited.
 
-=head3 C<< authority >>
+=head2 C<< authority >>
 
   class Person {
     authority 'cpan:TOBYINK';
@@ -3551,7 +3553,7 @@ If C<class> definitions are nested, C<authority> will be inherited by
 child classes. If a parent class is specified via C<extends>, C<authority>
 will not be inherited.
 
-=head3 C<< include >>
+=head2 C<< include >>
 
 C<include> is the Zydeco equivalent of Perl's C<require>.
 
@@ -3600,7 +3602,7 @@ once, and there are I<no> checks to deal with cyclical inclusions.
 Inclusions are currently only supported at the top level, and not within
 class and role definitions.
 
-=head3 C<< Zydeco::PACKAGE_SPEC() >>
+=head2 C<< Zydeco::PACKAGE_SPEC() >>
 
 This function can be used while a class or role is being compiled to
 tweak the specification for the class/role.
@@ -3611,14 +3613,96 @@ tweak the specification for the class/role.
   }
 
 It returns a hashref of attributes, methods, etc. L<MooX::Press> should
-give you an idea about how the hashref is structured, but Zydeco
-only supports a subset of what MooX::Press supports. For example, MooX::Press
+give you an idea about how the hashref is structured, but Zydeco only
+supports a subset of what MooX::Press supports. For example, MooX::Press
 allows C<has> to be an arrayref or a hashref, but Zydeco only supports
 a hashref. The exact subset that Zydeco supports is subject to change
 without notice.
 
 This can be used to access MooX::Press features that Zydeco doesn't
 expose.
+
+=head2 IMPORTS
+
+Zydeco also exports constants C<true> and C<false> into your
+namespace. These show clearer boolean intent in code than using 1 and 0.
+
+Zydeco exports C<rw>, C<ro>, C<rwp>, C<lazy>, C<bare>, and C<private>
+constants which make your attribute specs a little cleaner looking.
+
+Zydeco exports C<blessed> from L<Scalar::Util> because that can be
+handy to have, and C<confess> from L<Carp>. Zydeco's copy of C<confess>
+is super-powered and runs its arguments through C<sprintf>.
+
+  before vote {
+    if ($self->age < 18) {
+      confess("Can't vote, only %d", $self->age);
+    }
+  }
+
+Zydeco turns on strict, warnings, and the following modern Perl
+features:
+
+  # Perl 5.14 and Perl 5.16
+  say state unicode_strings
+  
+  # Perl 5.18 or above
+  say state unicode_strings unicode_eval evalbytes current_sub fc
+
+If you're wondering why not other features, it's because I didn't want to
+enable any that are currently classed as experimental, nor any that require
+a version of Perl above 5.18. The C<switch> feature is mostly seen as a
+failed experiment these days, and C<lexical_subs> cannot be called as methods
+so are less useful in object-oriented code.
+
+You can, of course, turn on extra features yourself.
+
+  package MyApp {
+    use Zydeco;
+    use feature qw( lexical_subs postderef );
+    
+    ...;
+  }
+
+(The C<current_sub> feature is unlikely to work fully unless you
+have C<:optimize> switched on for that method, or the method does not
+include a signature. For non-optimized methods with a signature, a
+wrapper is installed that handles checks, coercions, and defaults.
+C<< __SUB__ >> will point to the "inner" sub, minus the wrapper.)
+
+Zydeco exports L<Syntax::Keyword::Try> for you. Useful to have.
+
+And last but not least, it exports all the types, C<< is_* >> functions,
+and C<< assert_* >> functions from L<Types::Standard>,
+L<Types::Common::String>, and L<Types::Common::Numeric>.
+
+You can choose which parts of Zydeco you import:
+
+  package MyApp {
+    use Zydeco keywords => [qw/
+      -booleans
+      -privacy
+      -utils
+      -types
+      -is
+      -assert
+      -features
+      try
+      class abstract role interface
+      include toolkit begin end extends with requires
+      has constant method multi factory before after around
+      type_name coerce
+      version authority overload
+    /];
+
+It should mostly be obvious what they all do, but C<< -privacy >> is
+C<ro>, C<rw>, C<rwp>, etc; C<< -types >> is bareword type constraints
+(though even without this export, they should work in method signatures),
+C<< -is >> are the functions like C<is_NonEmptyStr> and C<is_Object>,
+C<< -assert >> are functions like C<assert_Int>, C<< -utils >> gives
+you C<blessed> and C<confess>.
+
+=head1 FEATURES
 
 =head2 Helper Subs
 
@@ -3684,87 +3768,6 @@ coderefs that need to be defined here and there:
   );
 
 Though consider using L<Sub::Quote> if you're using Moo.
-
-=head2 Utilities
-
-Zydeco also exports constants C<true> and C<false> into your
-namespace. These show clearer boolean intent in code than using 1 and 0.
-
-Zydeco exports C<rw>, C<ro>, C<rwp>, and C<lazy> constants
-which make your attribute specs a little cleaner looking.
-
-Zydeco exports C<blessed> from L<Scalar::Util> because that can
-be handy to have, and C<confess> from L<Carp>. Zydeco's copy
-of C<confess> is super-powered and runs its arguments through C<sprintf>.
-
-  before vote {
-    if ($self->age < 18) {
-      confess("Can't vote, only %d", $self->age);
-    }
-  }
-
-Zydeco turns on strict, warnings, and the following modern Perl
-features:
-
-  # Perl 5.14 and Perl 5.16
-  say state unicode_strings
-  
-  # Perl 5.18 or above
-  say state unicode_strings unicode_eval evalbytes current_sub fc
-
-If you're wondering why not other features, it's because I didn't want to
-enable any that are currently classed as experimental, nor any that require
-a version of Perl above 5.18. The C<switch> feature is mostly seen as a
-failed experiment these days, and C<lexical_subs> cannot be called as methods
-so are less useful in object-oriented code.
-
-You can, of course, turn on extra features yourself.
-
-  package MyApp {
-    use Zydeco;
-    use feature qw( lexical_subs postderef );
-    
-    ...;
-  }
-
-(The C<current_sub> feature is unlikely to work fully unless you
-have C<:optimize> switched on for that method, or the method does not
-include a signature. For non-optimized methods with a signature, a
-wrapper is installed that handles checks, coercions, and defaults.
-C<< __SUB__ >> will point to the "inner" sub, minus the wrapper.)
-
-Zydeco exports L<Syntax::Keyword::Try> for you. Useful to have.
-
-And last but not least, it exports all the types, C<< is_* >> functions,
-and C<< assert_* >> functions from L<Types::Standard>,
-L<Types::Common::String>, and L<Types::Common::Numeric>.
-
-As of version 0.304, you can choose which parts of Zydeco you
-import:
-
-  package MyApp {
-    use Zydeco keywords => [qw/
-      -booleans
-      -privacy
-      -utils
-      -types
-      -is
-      -assert
-      -features
-      try
-      class abstract role interface
-      include toolkit begin end extends with requires
-      has constant method multi factory before after around
-      type_name coerce
-      version authority overload
-    /];
-
-It should mostly be obvious what they all do, but C<< -privacy >> is
-C<ro>, C<rw>, C<rwp>, etc; C<< -types >> is bareword type constraints
-(though even without this export, they should work in method signatures),
-C<< -is >> are the functions like C<is_NonEmptyStr> and C<is_Object>,
-C<< -assert >> are functions like C<assert_Int>, C<< -utils >> gives
-you C<blessed> and C<confess>.
 
 =head2 Anonymous Classes and Roles
 
@@ -3885,7 +3888,7 @@ Anonymous parameterizable classes are possible:
   my $generator = do { class ($footype, $bartype) {
     has foo (type => $footype);
     has bar (type => $bartype);
-  };
+  } };
   
   my $class = $generator->generate_package(Int, Num);
   
@@ -3918,7 +3921,42 @@ Often it makes more sense to parameterize roles than classes.
 
 Anonymous parameterizable roles are possible.
 
+=head1 BUGS
+
+Please report any bugs to
+L<http://rt.cpan.org/Dist/Display.html?Queue=Zydeco>.
+
+=head1 TODO
+
+=head2 Plugin system
+
+Zydeco can often load MooX/MouseX/MooseX plugins and work
+fine with them, but some things won't work, like plugins that rely on
+being able to wrap C<has>. So it would be nice to have a plugin system
+that extensions can hook into.
+
+If you're interested in extending Zydeco, file a bug report about
+it and let's have a conversation about the best way for that to happen.
+I probably won't start a plugin API until someone actually wants to
+write a plugin, because that will give me a better idea about what kind
+of API is required.
+
+=head1 SEE ALSO
+
+Less magic version:
+L<MooX::Press>.
+
+Important underlying technologies:
+L<Moo>, L<Type::Tiny::Manual>, L<Sub::HandlesVia>, L<Sub::MultiMethod>,
+L<Lexical::Accessor>, L<Syntax::Keyword::Try>.
+
+Similar modules:
+L<Moops>, L<Kavorka>, L<Dios>, L<MooseX::Declare>.
+
 =head2 Zydeco vs Moops
+
+Because I also wrote Moops, people are likely to wonder what the difference
+is, and why re-invent the wheel?
 
 Zydeco has fewer dependencies than Moops, and crucially doesn't rely on
 L<Package::Keyword> and L<Devel::CallParser> which have... issues.
@@ -4097,38 +4135,6 @@ Zydeco:
 
 These were always on my todo list for Moops; I doubt they'll ever be done.
 They work nicely in Zydeco though.
-
-=head1 BUGS
-
-Please report any bugs to
-L<http://rt.cpan.org/Dist/Display.html?Queue=Zydeco>.
-
-=head1 TODO
-
-=head2 Plugin system
-
-Zydeco can often load MooX/MouseX/MooseX plugins and work
-fine with them, but some things won't work, like plugins that rely on
-being able to wrap C<has>. So it would be nice to have a plugin system
-that extensions can hook into.
-
-If you're interested in extending Zydeco, file a bug report about
-it and let's have a conversation about the best way for that to happen.
-I probably won't start a plugin API until someone actually wants to
-write a plugin, because that will give me a better idea about what kind
-of API is required.
-
-=head1 SEE ALSO
-
-Less magic version:
-L<MooX::Press>.
-
-Important underlying technologies:
-L<Moo>, L<Type::Tiny::Manual>, L<Sub::HandlesVia>, L<Sub::MultiMethod>,
-L<Lexical::Accessor>, L<Syntax::Keyword::Try>.
-
-Similar modules:
-L<Moops>, L<Kavorka>, L<Dios>, L<MooseX::Declare>.
 
 =head1 AUTHOR
 
