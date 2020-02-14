@@ -8,11 +8,16 @@ package MyApp {
 	class Foo {
 		has $bizzle ( type => Int );
 		
+		method $private :optimize ( Int $x ) {
+			return $x + 1;
+		}
+		
 		method do_tests () {
 			::ok(!$self->can('bizzle'), 'no normal accessor method created for bizzle');
 			::ok(!exists $self->{bizzle}, 'bizzle not set by constructor');
 			$self->$bizzle(666);
 			::is($self->$bizzle, 666, 'lexical accessor works');
+			::is($self->$private(998), 999, 'lexical method works too');
 		}
 	}
 }

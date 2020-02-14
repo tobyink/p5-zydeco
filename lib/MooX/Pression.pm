@@ -459,7 +459,7 @@ our $GRAMMAR = qr{
 		(?<MxpMethodSyntax>
 		
 			(?&PerlOWS)
-			(?: (?&MxpSimpleIdentifier) )?                # CAPTURE:name
+			(?: \$? (?&MxpSimpleIdentifier) )?            # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -919,11 +919,18 @@ sub _handle_method_keyword {
 		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
 	
-	if (defined $name) {
+	my $lex_name;
+	if (defined $name and $name =~ /^\$(.+)$/) {
+		$lex_name = $name;
+	}
+	
+	my $return = '';
+	
+	if (defined $name and not defined $lex_name) {
 		if ($has_sig) {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
-			return sprintf(
+			$return = sprintf(
 				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				$me,
 				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
@@ -935,7 +942,7 @@ sub _handle_method_keyword {
 		}
 		else {
 			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
-			return sprintf(
+			$return = sprintf(
 				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
 				$me,
 				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
@@ -948,7 +955,7 @@ sub _handle_method_keyword {
 		if ($has_sig) {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
-			return sprintf(
+			$return = sprintf(
 				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				'MooX::Press',
 				$optim ? B::perlstring($munged_code) : $munged_code,
@@ -959,7 +966,7 @@ sub _handle_method_keyword {
 		}
 		else {
 			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
-			return sprintf(
+			$return = sprintf(
 				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, optimize => %d });',
 				'MooX::Press',
 				$optim ? B::perlstring($munged_code) : $munged_code,
@@ -967,6 +974,12 @@ sub _handle_method_keyword {
 			);
 		}
 	}
+	
+	if ($lex_name) {
+		return "my $lex_name = $return";
+	}
+	
+	return $return;
 }
 
 sub _handle_multimethod_keyword {
@@ -2770,6 +2783,8 @@ have delegations and a default value.
 Private attributes use lexical variables, so are visible to subclasses
 only if the subclass definition is nested in the base class.
 
+Private attributes are available from MooX::Pression 0.400.
+
 =head3 C<< constant >>
 
 Defines a constant.
@@ -3064,6 +3079,22 @@ A workaround is to wrap it in a C<< do { ... } >> block.
 
   my $x = do { method { ... } };
 
+=head4 Private methods
+
+A shortcut for the pattern of:
+
+  my $x = do { method { ... } };
+
+Is this:
+
+  method $x { ... }
+
+MooX::Pression will declare the variable C<< my $x >> for you, assign the
+coderef to the variable, and you don't need to worry about a C<do> block
+to wrap it.
+
+This feature is available from MooX::Pression 0.400.
+
 =head4 Multimethods
 
 Multi methods should I<< Just Work [tm] >> if you prefix them with the
@@ -3092,6 +3123,8 @@ installed.
 Outside of C<class>, C<abstract class>, C<role>, and C<interface> blocks,
 C<multi method> will define a multi method in the caller package. (That is,
 usually the factory.)
+
+Multimethods cannot be anonymous or private.
 
 =head3 C<< requires >>
 
