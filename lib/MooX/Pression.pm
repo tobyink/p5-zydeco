@@ -4013,30 +4013,9 @@ however you need to.
 
 =head3 Lexical accessors
 
-Moops automatically imported C<lexical_has> from L<Lexical::Accessor>
-into each class. MooX::Pression does not, but thanks to how namespacing
-works, it only needs to be imported once if you want to use it.
-
-  package MyApp {
-    use MooX::Pression;
-    use Lexical::Accessor;
-    
-    class Foo {
-      my $identifier = lexical_has identifier => (
-        is      => rw,
-        isa     => Int,
-        default => sub { 0 },
-      );
-      
-      method some_method () {
-        $self->$identifier( 123 );    # set identifier
-        ...;
-        return $self->$identifier;    # get identifier
-      }
-    }
-  }
-
-Lexical accessors give you true private object attributes.
+MooX::Pression has tighter integration with L<Lexical::Accessor>,
+allowing you to use the same keyword C<has> to declare private
+and public attributes.
 
 =head3 Factories
 
@@ -4114,6 +4093,9 @@ that extensions can hook into.
 
 If you're interested in extending MooX::Pression, file a bug report about
 it and let's have a conversation about the best way for that to happen.
+I probably won't start a plugin API until someone actually wants to
+write a plugin, because that will give me a better idea about what kind
+of API is required.
 
 =head1 SEE ALSO
 
