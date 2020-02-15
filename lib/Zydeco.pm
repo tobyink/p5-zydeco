@@ -2112,6 +2112,10 @@ to whatever:
     factory_package => 'MyApp::Makers',
   );
 
+(If Zydeco is imported from C<main>, then prefix defaults to undef,
+and factory_package defaults to "Local". But you will get a warning
+about that unless it's a C<< perl -e >> one-liner.)
+
 Zydeco assumes that you are defining all the classes and roles
 within this namespace prefix in a single Perl module file. This Perl
 module file would normally be named based on the prefix, so in the
@@ -3704,6 +3708,18 @@ C<ro>, C<rw>, C<rwp>, etc; C<< -types >> is bareword type constraints
 C<< -is >> are the functions like C<is_NonEmptyStr> and C<is_Object>,
 C<< -assert >> are functions like C<assert_Int>, C<< -utils >> gives
 you C<blessed> and C<confess>.
+
+C<< no Zydeco >> will clear up: 
+
+      class abstract role interface
+      include toolkit begin end extends with requires
+      has constant method multi factory before after around
+      type_name coerce
+      version authority overload
+
+But won't clear up things Zydeco imported for you from other packages.
+Use C<< no MooX::Press::Keywords >>, C<< no Types::Standard >>, etc to
+do that, or just use L<namespace::autoclean>.
 
 =head1 FEATURES
 
