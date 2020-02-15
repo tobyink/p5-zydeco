@@ -3,7 +3,6 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Requires 'Sub::MultiMethod';
-use Test::Requires { 'MooX::Press' => '0.035' };
 
 use Types::Standard -types;
 

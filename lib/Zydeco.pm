@@ -4,7 +4,7 @@ use warnings;
 use B ();
 use Carp ();
 use Import::Into ();
-use MooX::Press 0.045 ();
+use MooX::Press 0.048 ();
 use MooX::Press::Keywords ();
 use Syntax::Keyword::Try ();
 use feature ();
@@ -1278,19 +1278,22 @@ my @EXPORTABLES = qw(
 	version authority overload
 );
 
+sub unimport {
+	Keyword::Simple::undefine($_) for qw<
+		class abstract role interface
+		include toolkit begin end extends with requires
+		has constant method multi factory before after around
+		type_name coerce
+	>;
+	goto \&Exporter::Tiny::unimport;
+}
+
 sub import {
 	no warnings 'closure';
 	my ($me, %opts) = (shift, @_);
-	my $caller = ($opts{caller} ||= caller);
-	
-	# Need to reproduce this logic from MooX::Press to find out
-	# the name of the type library.
-	#
+	my $caller = ($opts{caller} ||= caller);	
 	require MooX::Press;
-	$opts{prefix}           = $opts{caller} unless exists $opts{prefix};
-	$opts{factory_package}  = $opts{prefix} unless exists $opts{factory_package};
-	$opts{type_library}     = 'Types'       unless exists $opts{type_library};
-	$opts{type_library}     = 'MooX::Press'->qualify_name($opts{type_library}, $opts{prefix});
+	'MooX::Press'->_apply_default_options(\%opts);
 	
 	my %want = map +($_ => 1), @{ $opts{keywords} || \@EXPORTABLES };
 	

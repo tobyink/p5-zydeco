@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Requires { 'Type::Params' => '1.009002' };
-use Test::Requires { 'MooX::Press' => '0.042' };
 
 package MyApp {
 	use Zydeco;

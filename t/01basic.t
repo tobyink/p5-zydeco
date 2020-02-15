@@ -24,7 +24,9 @@ use strict;
 use warnings;
 use Test::More;
 
-use_ok('Zydeco');
+package MyApp {
+	::use_ok('Zydeco');
+}
 
 done_testing;
 

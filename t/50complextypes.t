@@ -2,7 +2,8 @@ use strict;
 use warnings;
 use Test::More;
 use Test::Fatal;
-use Zydeco prefix => 'Local';
+
+use Zydeco factory_package => 'Local';
 
 class Foo;
 
