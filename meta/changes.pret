@@ -216,3 +216,10 @@
 		item "Restructure documentation."^^Documentation;
 		item "Better description."^^Documentation;
 	].
+
+`Zydeco 0.501 cpan:TOBYINK`
+	issued  2020-02-15;
+	changeset [
+		item "Provide an `unimport` method."^^Change;
+		item "Better defaults of `factory_package` and `prefix` in latest MooX::Press."^^Change;
+	].
