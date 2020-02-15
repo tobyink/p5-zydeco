@@ -223,3 +223,9 @@
 		item "Provide an `unimport` method."^^Change;
 		item "Better defaults of `factory_package` and `prefix` in latest MooX::Press."^^Change;
 	].
+
+`Zydeco 0.502 cpan:TOBYINK`
+	issued  2020-02-15;
+	changeset [
+		item "IMPORTS should be a level 1 heading."^^Documentation;
+	].

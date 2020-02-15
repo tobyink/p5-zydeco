@@ -7,7 +7,7 @@ package MooX::Pression;
 use Zydeco ();
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.501';
+our $VERSION   = '0.502';
 our @ISA       = 'Zydeco';
 
 *PACKAGE_SPEC =\&Zydeco::PACKAGE_SPEC;
