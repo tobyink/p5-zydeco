@@ -1291,7 +1291,7 @@ sub unimport {
 sub import {
 	no warnings 'closure';
 	my ($me, %opts) = (shift, @_);
-	my $caller = ($opts{caller} ||= caller);	
+	my $caller = ($opts{caller} ||= caller);
 	require MooX::Press;
 	'MooX::Press'->_apply_default_options(\%opts);
 	
