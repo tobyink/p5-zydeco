@@ -5,10 +5,15 @@ use Test::Fatal;
 
 package MyApp {
 	use Zydeco;
+	BEGIN {
+		our $VERSION    = '1.0';
+		our $AUTHORITY  = 'cpan:TOBYINK';
+	};
 	class Animal {
+		version 1.1;
 		has name;
 	}
-	class Doggo {
+	class Doggo 2.0 {
 		extends Species('dog', 'Canis familiaris');
 	}
 	class Species (Str $common, Str $binomial) {
@@ -22,6 +27,9 @@ use Types::Standard -types;
 use MyApp::Types -types;
 
 my $Human = MyApp::Species->generate_package('human', 'Homo sapiens');
+
+is($MyApp::Animal::VERSION, '1.1');
+is($MyApp::Doggo::VERSION, '2.0');
 
 ok(
 	ClassName->check($Human) && $Human->can('new'),

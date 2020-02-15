@@ -326,6 +326,10 @@ our $GRAMMAR = qr{
 			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
 			(?&PerlOWS)
 			(?:
+				(?: (?&PerlVersionNumber) )                # CAPTURE:version
+				(?&PerlOWS)
+			)?
+			(?:
 				[(]
 					(?&PerlOWS)
 					(?:                                     # CAPTURE:sig
@@ -360,6 +364,10 @@ our $GRAMMAR = qr{
 			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
 			(?&PerlOWS)
 			(?:
+				(?: (?&PerlVersionNumber) )                # CAPTURE:version
+				(?&PerlOWS)
+			)?
+			(?:
 				[(]
 					(?&PerlOWS)
 					(?:                                     # CAPTURE:sig
@@ -390,6 +398,10 @@ our $GRAMMAR = qr{
 			(?&PerlOWS)
 			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
 			(?&PerlOWS)
+			(?:
+				(?: (?&PerlVersionNumber) )                # CAPTURE:version
+				(?&PerlOWS)
+			)?
 			(?:
 				[(]
 					(?&PerlOWS)
@@ -1129,14 +1141,17 @@ sub _handle_modifier_keyword {
 }
 
 sub _handle_package_keyword {
-	my ($me, $kind, $name, $compact_extends, $compact_with, $code, $has_sig, $sig, $plus, $opts) = @_;
+	my ($me, $kind, $name, $version, $compact_extends, $compact_with, $code, $has_sig, $sig, $plus, $opts) = @_;
 	
 	my $compact_code = '';
 	if ($compact_extends) {
-		$compact_code .= sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($compact_extends, 'class'))
+		$compact_code .= sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($compact_extends, 'class'));
 	}
 	if ($compact_with) {
-		$compact_code .= sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($compact_with, 'role'))
+		$compact_code .= sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($compact_with, 'role'));
+	}
+	if ($version) {
+		$compact_code .= sprintf('%s::version(%s);', $me, $version =~ /^[0-9]/ ? B::perlstring($version) : $version);
 	}
 	
 	if ($kind eq 'abstract') {
@@ -1426,12 +1441,12 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $plus, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
+		my ($pos, $plus, $name, $version, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{version}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
 		my $has_sig = !!exists $+{sig};
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
+		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $version, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
 	} if $want{class};
 
 	Keyword::Simple::define abstract => sub {
@@ -1448,12 +1463,12 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $plus, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with},$+{block});
+		my ($pos, $plus, $name, $version, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{version}, $+{sig}, $+{compact_extends}, $+{compact_with},$+{block});
 		my $has_sig = !!exists $+{sig};
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
+		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $version, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
 	} if $want{abstract};
 
 	for my $kw (qw/ role interface /) {
@@ -1471,11 +1486,11 @@ sub import {
 				$ref,
 			);
 			
-			my ($pos, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
+			my ($pos, $name, $version, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{name}, $+{version}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
 			my $has_sig = !!exists $+{sig};
 			$block ||= '{}';
 			
-			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, '', \%opts), 1);
+			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $version, $compact_extends, $compact_with, $block, $has_sig, $sig, '', \%opts), 1);
 		} if $want{$kw};
 	}
 
@@ -3605,12 +3620,12 @@ Can only be used in C<class> blocks.
 =head2 C<< version >>
 
   class Person {
-    version 1.0;
+    version '1.0';
   }
 
 This just sets C<< $MyApp::Person::VERSION >>.
 
-Can only be used in C<class>, C<abstract class>, C<role>, and C<interface>
+Can only be used with C<class>, C<abstract class>, C<role>, and C<interface>
 blocks.
 
 You can set a default version for all packages like this:
@@ -3623,6 +3638,14 @@ You can set a default version for all packages like this:
 If C<class> definitions are nested, C<version> will be inherited by
 child classes. If a parent class is specified via C<extends>, C<version>
 will not be inherited.
+
+Versions may also be expressed like:
+
+  class Animal 1.0;
+  
+  class Person 1.1 extends Animal {
+    ...;
+  }
 
 =head2 C<< authority >>
 
