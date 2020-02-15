@@ -229,3 +229,9 @@
 	changeset [
 		item "IMPORTS should be a level 1 heading."^^Documentation;
 	].
+
+`Zydeco 0.503 cpan:TOBYINK`
+	issued  2020-02-15;
+	changeset [
+		item "Allow `version`, `extends`, and `with` to be part of a class/role/interface declaration instead of within the block."^^Change;
+	].
