@@ -4,9 +4,7 @@ use Test::More;
 
 package MyApp {
 	use Zydeco;
-	class Doggo {
-		with Generators::Species('dog', 'Canis familiaris'), GoodBoi?;
-	}
+	class Doggo with Generators::Species('dog', 'Canis familiaris'), GoodBoi?;
 	role Generators::Species (Str $common, Str $binomial) {
 		constant common_name = $common;
 		constant binomial    = $binomial;

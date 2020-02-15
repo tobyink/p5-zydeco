@@ -290,6 +290,35 @@ our $GRAMMAR = qr{
 			)*
 		)#</MxpRoleList>
 		
+		(?<MxpCompactRoleList>
+		
+			(?&PerlOWS)
+			(?:
+				(?&PerlQualifiedIdentifier)
+			)
+			(?:
+				(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+			)?
+			(?:
+				(?&PerlOWS)
+				,
+				(?&PerlOWS)
+				(?:
+					(?&PerlQualifiedIdentifier)
+				)
+				(?:
+					(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+				)?
+			)*
+		)#</MxpCompactRoleList>
+		
+		(?<MxpIncludeSyntax>
+		
+			(?&PerlOWS)
+			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
+			(?&PerlOWS)
+		)#</MxpIncludeSyntax>
+		
 		(?<MxpClassSyntax>
 		
 			(?&PerlOWS)
@@ -306,16 +335,21 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
+			(?:
+				extends
+				(?&PerlOWS)
+				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_extends
+				(?&PerlOWS)
+			)?
+			(?:
+				with
+				(?&PerlOWS)
+				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
+				(?&PerlOWS)
+			)?
 			(?: (?&PerlBlock) )?                          # CAPTURE:block
 			(?&PerlOWS)
 		)#</MxpClassSyntax>
-		
-		(?<MxpIncludeSyntax>
-		
-			(?&PerlOWS)
-			(?: (?&PerlQualifiedIdentifier) )?            # CAPTURE:name
-			(?&PerlOWS)
-		)#</MxpIncludeSyntax>
 		
 		(?<MxpAbstractSyntax>
 			
@@ -335,6 +369,18 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
+			(?:
+				extends
+				(?&PerlOWS)
+				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_extends
+				(?&PerlOWS)
+			)?
+			(?:
+				with
+				(?&PerlOWS)
+				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
+				(?&PerlOWS)
+			)?
 			(?: (?&PerlBlock) )?                          # CAPTURE:block
 			(?&PerlOWS)
 		)#</MxpAbstractSyntax>
@@ -354,6 +400,12 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
+			(?:
+				with
+				(?&PerlOWS)
+				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
+				(?&PerlOWS)
+			)?
 			(?: (?&PerlBlock) )?                          # CAPTURE:block
 			(?&PerlOWS)
 		)#</MxpRoleSyntax>
@@ -1077,16 +1129,26 @@ sub _handle_modifier_keyword {
 }
 
 sub _handle_package_keyword {
-	my ($me, $kind, $name, $code, $has_sig, $sig, $plus, $opts) = @_;
+	my ($me, $kind, $name, $compact_extends, $compact_with, $code, $has_sig, $sig, $plus, $opts) = @_;
+	
+	my $compact_code = '';
+	if ($compact_extends) {
+		$compact_code .= sprintf('q[%s]->_extends(%s);', $me, $me->_handle_role_list($compact_extends, 'class'))
+	}
+	if ($compact_with) {
+		$compact_code .= sprintf('q[%s]->_with(%s);', $me, $me->_handle_role_list($compact_with, 'role'))
+	}
 	
 	if ($kind eq 'abstract') {
 		$kind = 'class';
-		$code = "{ q[$me]->_abstract(1);  $code }";
+		$code = "{ q[$me]->_abstract(1);  $compact_code $code }";
 	}
-	
-	if ($kind eq 'interface') {
+	elsif ($kind eq 'interface') {
 		$kind = 'role';
-		$code = "{ q[$me]->_interface(1); $code }";
+		$code = "{ q[$me]->_interface(1); $compact_code $code }";
+	}
+	elsif (length $compact_code) {
+		$code = "{ $compact_code $code }";
 	}
 	
 	if ($name and $has_sig) {
@@ -1364,12 +1426,12 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $plus, $name, $sig, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{block});
+		my ($pos, $plus, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
 		my $has_sig = !!exists $+{sig};
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
+		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
 	} if $want{class};
 
 	Keyword::Simple::define abstract => sub {
@@ -1386,12 +1448,12 @@ sub import {
 			$ref,
 		);
 		
-		my ($pos, $plus, $name, $sig, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{block});
+		my ($pos, $plus, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{plus}, $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with},$+{block});
 		my $has_sig = !!exists $+{sig};
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $block, $has_sig, $sig, $plus, \%opts), 1);
+		$me->_inject($ref, $pos, $me->_handle_package_keyword(abstract => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
 	} if $want{abstract};
 
 	for my $kw (qw/ role interface /) {
@@ -1409,11 +1471,11 @@ sub import {
 				$ref,
 			);
 			
-			my ($pos, $name, $sig, $block) = ($+[0], $+{name}, $+{sig}, $+{block});
+			my ($pos, $name, $sig, $compact_extends, $compact_with, $block) = ($+[0], $+{name}, $+{sig}, $+{compact_extends}, $+{compact_with}, $+{block});
 			my $has_sig = !!exists $+{sig};
 			$block ||= '{}';
 			
-			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $block, $has_sig, $sig, '', \%opts), 1);
+			$me->_inject($ref, $pos, $me->_handle_package_keyword($kw => $name, $compact_extends, $compact_with, $block, $has_sig, $sig, '', \%opts), 1);
 		} if $want{$kw};
 	}
 
@@ -2367,7 +2429,7 @@ possible to specify a default toolkit when you import Zydeco.
 
 =head2 C<< extends >>
 
-Defines a parent class. Only for use within C<class> and C<abstract class>
+Defines a parent class. Only for use with C<class> and C<abstract class>
 blocks.
 
   class Person {
@@ -2379,6 +2441,16 @@ This works:
   class Person {
     extends ::Animal;   # no prefix
   }
+
+It is possible to "lift" C<extends> outside the class definition block:
+
+  class Person extends Animal {
+    ...;
+  }
+
+If there are no methods, etc to define, you don't need the block at all:
+
+  class Person extends Animal;
 
 =head2 C<< with >>
 
@@ -2411,8 +2483,23 @@ adding a question mark to the end of the name:
 
 This is equivalent to declaring an empty role.
 
-The C<with> keyword cannot be used outside of C<class>, C<abstract class>,
+The C<with> keyword can only be used with C<class>, C<abstract class>,
 C<role>, and C<interface> blocks.
+
+Similarly to C<extends>, C<with> can be "lifted" outside its block:
+
+  class Company with Taxable {
+    ...;
+  }
+  
+  interface Storage with Serializer, Deserializer;
+
+If lifting both C<extends> and C<with> outside a block, C<extends> must
+come first.
+
+  class Person extends Animal with Thinking::Rational {
+    ...;
+  }
 
 =head2 C<< begin >>
 
@@ -3987,20 +4074,6 @@ Moops is faster in most circumstances though.
 Here are a few key syntax and feature differences.
 
 =head3 Declaring a class
-
-Moops:
-
-  class Foo::Bar 1.0 extends Foo with Bar {
-    ...;
-  }
-
-Zydeco:
-
-  class Foo::Bar {
-    version 1.0;
-    extends Foo;
-    with Bar;
-  }
 
 Moops and Zydeco use different logic for determining whether a class
 name is "absolute" or "relative". In Moops, classes containing a "::" are seen
