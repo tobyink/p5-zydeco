@@ -5,7 +5,7 @@
 `Zydeco`
 	:runtime-requirement    [ :on "perl 5.014000"^^:CpanId ];
 	:runtime-requirement    [ :on "Import::Into"^^:CpanId ];
-	:runtime-requirement    [ :on "MooX::Press 0.046"^^:CpanId ];
+	:runtime-requirement    [ :on "MooX::Press 0.048"^^:CpanId ];
 	:runtime-requirement    [ :on "PPR"^^:CpanId ];
 	:runtime-requirement    [ :on "Keyword::Simple"^^:CpanId ];
 	:runtime-requirement    [ :on "B::Hooks::EndOfScope 0.24"^^:CpanId ];
