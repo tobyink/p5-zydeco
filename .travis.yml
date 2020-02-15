@@ -25,8 +25,6 @@ matrix:
       dist: trusty
     - perl: "5.22"
       dist: trusty
-    - perl: "5.20"
-      dist: trusty
     - perl: "5.18"
       dist: trusty
     - perl: "5.18"
@@ -56,7 +54,6 @@ matrix:
       dist: trusty
   allow_failures:
     - perl: "blead"
-    - perl: "5.20"
     - perl: "5.16"
     - perl: "5.14"
 before_install:
