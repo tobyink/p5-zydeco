@@ -3629,7 +3629,7 @@ without notice.
 This can be used to access MooX::Press features that Zydeco doesn't
 expose.
 
-=head2 IMPORTS
+=head1 IMPORTS
 
 Zydeco also exports constants C<true> and C<false> into your
 namespace. These show clearer boolean intent in code than using 1 and 0.
