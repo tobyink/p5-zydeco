@@ -242,3 +242,9 @@
 		item "Zydeco now has a website."^^Packaging;
 		item "Zydeco vs MooX::Press."^^Documentation;
 	].
+
+`Zydeco 0.505 cpan:TOBYINK`
+	issued  2020-02-16;
+	changeset [
+		item "Fix link to website (should not be HTTPS)."^^Bugfix;
+	].
