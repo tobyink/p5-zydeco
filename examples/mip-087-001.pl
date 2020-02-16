@@ -2,29 +2,27 @@ use v5.14;
 use strict;
 use warnings;
 
-package Local {
-	use Zydeco;
+use Zydeco factory_package => 'Local';
+
+class Employee {
+	has name  (type => Str, required => true);
+	has title (type => Str, required => true);
 	
-	class Employee {
-		has name  (type => Str, required => true);
-		has title (type => Str, required => true);
-		
-		method name_and_title () {
-			my $name  = $self->name;
-			my $title = $self->title;
-			return "$name, $title";
-		}
+	method name_and_title () {
+		my $name  = $self->name;
+		my $title = $self->title;
+		return "$name, $title";
 	}
+}
+
+class Employee::Former {
+	extends Employee;
+	factory former_employee;
+	has +title = "Team Member";
 	
-	class Employee::Former {
-		extends Employee;
-		factory former_employee;
-		has +title = "Team Member";
-		
-		around name_and_title () {
-			my $old = $self->$next(@_);
-			return "$old (Former)";
-		}
+	around name_and_title () {
+		my $old = $self->$next(@_);
+		return "$old (Former)";
 	}
 }
 

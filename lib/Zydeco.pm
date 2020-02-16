@@ -2139,6 +2139,10 @@ Factories to help your objects make other objects.
 
 =item *
 
+Powerful and concise attribute definitions
+
+=item *
+
 Methods with signatures, type constraints, and coercion.
 
 =item *
