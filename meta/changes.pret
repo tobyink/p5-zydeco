@@ -235,3 +235,10 @@
 	changeset [
 		item "Allow `version`, `extends`, and `with` to be part of a class/role/interface declaration instead of within the block."^^Change;
 	].
+
+`Zydeco 0.504 cpan:TOBYINK`
+	issued  2020-02-16;
+	changeset [
+		item "Zydeco now has a website."^^Packaging;
+		item "Zydeco vs MooX::Press."^^Documentation;
+	].
