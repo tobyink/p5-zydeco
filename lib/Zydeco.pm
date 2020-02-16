@@ -2925,6 +2925,26 @@ have delegations and a default value.
 Private attributes use lexical variables, so are visible to subclasses
 only if the subclass definition is nested in the base class.
 
+From version 0.506 onwards, not only can private attributes have public
+delegations and accessors, but public attributes can have private
+delegations and attributes:
+
+  class Foo {
+    my ($clear_ua, $http_get, $http_post);  # predeclare
+    
+    has ua (
+      is      => ro,                        # public attribute!
+      clearer => \$clear_ua,                # private clearer
+      default => sub { HTTP::Tiny->new },
+      handles => [                          # private delegations
+        \$http_get  => 'get',               #
+        \$http_post => 'post',              #
+      ],
+    );
+    
+    ...;
+  }
+
 =head2 C<< constant >>
 
 Defines a constant.
