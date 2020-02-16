@@ -248,3 +248,9 @@
 	changeset [
 		item "Fix link to website (should not be HTTPS)."^^Bugfix;
 	].
+
+`Zydeco 0.506 cpan:TOBYINK`
+	issued  2020-02-16;
+	changeset [
+		item "Public attributes may now have private accessors and delegations."^^Change;
+	].
