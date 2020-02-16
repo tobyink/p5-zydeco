@@ -4085,6 +4085,17 @@ L<Lexical::Accessor>, L<Syntax::Keyword::Try>.
 Similar modules:
 L<Moops>, L<Kavorka>, L<Dios>, L<MooseX::Declare>.
 
+=head2 Zydeco vs MooX::Press
+
+Zydeco is mostly just a syntax wrapper over L<MooX::Press>. You can see the
+class and role definition that Zydeco passes to MooX::Press using:
+
+  use Zydeco debug => 1;
+
+Rewriting your classes and roles to use MooX::Press directly would give you
+a small speed boost, and fewer dependencies, though MooX::Press is a little
+more frustrating to work with, needing a I<lot> of punctuation.
+
 =head2 Zydeco vs Moops
 
 Because I also wrote Moops, people are likely to wonder what the difference
