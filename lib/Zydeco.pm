@@ -4072,6 +4072,9 @@ of API is required.
 
 =head1 SEE ALSO
 
+Zydeco website:
+L<http://zydeco.toby.ink/>.
+
 Less magic version:
 L<MooX::Press>.
 
