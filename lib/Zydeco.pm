@@ -29,7 +29,7 @@ BEGIN {
 		!!$gather{$me}{$caller};
 	}
 	sub import {
-		my ($me, $action, $caller) = (shift, shift, scalar caller);		
+		my ($me, $action, $caller) = (shift, shift, scalar caller);
 		if ($action eq -gather) {
 			while (@_) {
 				my ($k, $v) = splice @_, 0, 2;
