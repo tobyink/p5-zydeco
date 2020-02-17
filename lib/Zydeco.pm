@@ -24,8 +24,12 @@ BEGIN {
 	package Zydeco::_Gather;
 	my %gather;
 	my %stack;
+	sub _already {
+		my ($me, $caller) = @_;
+		!!$gather{$me}{$caller};
+	}
 	sub import {
-		my ($me, $action, $caller) = (shift, shift, scalar caller);
+		my ($me, $action, $caller) = (shift, shift, scalar caller);		
 		if ($action eq -gather) {
 			while (@_) {
 				my ($k, $v) = splice @_, 0, 2;
@@ -65,7 +69,8 @@ BEGIN {
 				warn Data::Dumper::Dumper($gather{$me}{$caller});
 			}
 			
-			@_ = ('MooX::Press' => $gather{$me}{$caller});
+			delete $stack{$me}{$caller};
+			@_ = ('MooX::Press' => delete $gather{$me}{$caller});
 			goto \&MooX::Press::import;
 		}
 		elsif ($action eq -parent) {
@@ -1369,6 +1374,12 @@ sub import {
 	no warnings 'closure';
 	my ($me, %opts) = (shift, @_);
 	my $caller = ($opts{caller} ||= caller);
+	
+	if ('Zydeco::_Gather'->_already($caller)) {
+		require Carp;
+		Carp::croak("Zydeco is already in scope");
+	}
+	
 	require MooX::Press;
 	'MooX::Press'->_apply_default_options(\%opts);
 	
@@ -1404,7 +1415,9 @@ sub import {
 		feature->import::into($caller, qw( say state unicode_strings ))
 			if $want{-features};
 	}
-	for my $library (qw/ Types::Standard Types::Common::Numeric Types::Common::String /) {
+	my @libs = qw/ Types::Standard Types::Common::Numeric Types::Common::String /;
+	push @libs, $opts{type_library} if $opts{type_library}->isa('Type::Library');
+	for my $library (@libs) {
 		$library->import::into($caller, $_)
 			for grep $want{$_}, qw( -types -is -assert );
 	}
