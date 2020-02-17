@@ -254,3 +254,9 @@
 	changeset [
 		item "Public attributes may now have private accessors and delegations."^^Change;
 	].
+
+`Zydeco 0.507 cpan:TOBYINK`
+	issued  2020-02-17;
+	changeset [
+		item "Cope when Zydeco is imported into the same package twice (but blow up if it's also the same lexical scope.)."^^Change;
+	].
