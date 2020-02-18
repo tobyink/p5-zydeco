@@ -260,3 +260,10 @@
 	changeset [
 		item "Cope when Zydeco is imported into the same package twice (but blow up if it's also the same lexical scope.)."^^Change;
 	].
+
+`Zydeco 0.508 cpan:TOBYINK`
+	issued  2020-02-18;
+	changeset [
+		item "Allow `begin` and `end` to be used multiple times in a class/role."^^Change;
+		item "Provide `before_apply` and `after_apply` hooks for roles using Role::Hooks."^^Addition;
+	].
