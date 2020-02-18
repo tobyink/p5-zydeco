@@ -2626,7 +2626,7 @@ If C<class> definitions are nested, C<end> blocks will be inherited by
 child classes. If a parent class is specified via C<extends>, C<end>
 blocks will not be inherited.
 
-=head C<< before_apply >>
+=head2 C<< before_apply >>
 
 Within a C<role>, a C<before_apply> block is run before applying the role
 to another package.
@@ -2648,7 +2648,7 @@ C<before_apply> block.
 Note that if Class1 consumes Role1, and Class2 extends Class1, this hook
 will not be run for Class2.
 
-=head C<< after_apply >>
+=head2 C<< after_apply >>
 
 Within a C<role>, an C<after_apply> block is run after applying the role
 to another package.
