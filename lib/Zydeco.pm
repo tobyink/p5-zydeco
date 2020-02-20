@@ -645,7 +645,7 @@ our $GRAMMAR = qr{
 				(?&PerlBlock)|(?&PerlIdentifier)|(?&PerlString)
 			)
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )                           # CAPTURE:code
+			(?: (?&PerlBlock) )?                          # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpCoerceSyntax>
 		
