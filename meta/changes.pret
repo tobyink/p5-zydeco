@@ -267,3 +267,12 @@
 		item "Allow `begin` and `end` to be used multiple times in a class/role."^^Change;
 		item "Provide `before_apply` and `after_apply` hooks for roles using Role::Hooks."^^Addition;
 	].
+
+`Zydeco 0.509 cpan:TOBYINK`
+	issued  2020-02-20;
+	changeset [
+		item "Allow a lot of keywords to appear in `begin`, `end`, `after_apply`, and `before apply` hooks which previously did not work."^^Change;
+		item "Remove pod from MooX::Pression stub module."^^Documentation;
+		item "Syntax rewrite in version 0.100 accidentally made the optional block after a coercion declaration required. It is now optional again."^^Bugfix;
+		item "More reliable parsing of aliases for multimethod candidates."^^Bugfix;
+	].
