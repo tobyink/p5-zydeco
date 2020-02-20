@@ -1062,7 +1062,9 @@ sub _handle_multimethod_keyword {
 	my $extra_code = '';
 	for my $attr (@$attrs) {
 		$optim = 1 if $attr =~ /^:optimize\b/;
-		$extra_code .= sprintf('alias=>%s', B::perlstring($1)) if $attr =~ /^:alias\((.+)\)$/;
+		if (my ($alias) = ($attr =~ /^:alias\((.+)\)$/)) {
+			$extra_code .= sprintf('alias=>%s', B::perlstring($alias));
+		}
 	}
 	
 	if ($has_sig) {
