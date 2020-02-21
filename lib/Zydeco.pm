@@ -2471,6 +2471,64 @@ is able to allow them as barewords in some places...
 
 See also L<Type::Tiny::Manual>.
 
+=head3 The Type Registries
+
+Your package's type library is the collection of type constraints for each
+class and role in your code.
+
+For the types in method signatures, etc, the type I<registry> is consulted.
+The registry includes not just the classes from your type library, but also
+useful types like B<Str>, B<Int>, B<ArrayRef>, and B<NonEmptyStr> defined in
+L<Types::Standard>, L<Types::Common::Numeric>, and L<Types::Common::String>.
+
+  class Calculator {
+    method sum ( ArrayRef[Num] $numbers ) {
+      my $sum = 0;
+      $sum += $_ for @$numbers;
+      return $sum;
+    }
+  }
+
+It can sometimes be useful to add other types to the registry. This can be
+done pretty easily:
+
+  class Calculator {
+    begin {
+      my $reg = Type::Registry->for_class($package);
+      $reg->add_type(ArrayRef[Num] => 'Numbers');
+      $reg->add_type(ArrayRef[Int] => 'Integers');
+    }
+    
+    method sum ( Numbers $numbers ) {
+      my $sum = 0;
+      $sum += $_ for @$numbers;
+      return $sum;
+    }
+  }
+
+The types you add this way will be visible only within the class/role that
+defined them. If you wish to make them visible to all your classes and roles,
+then you can add them to the factory's registry:
+
+  class MathsBase {
+    begin {
+      my $reg = Type::Registry->for_class($package->FACTORY);
+      $reg->add_type(ArrayRef[Num] => 'Numbers');
+      $reg->add_type(ArrayRef[Int] => 'Integers');
+    }
+  }
+  
+  class Calculator {
+    method sum ( Numbers $numbers ) {
+      my $sum = 0;
+      $sum += $_ for @$numbers;
+      return $sum;
+    }
+  }
+
+See L<Type::Registry> for more details on adding new types to registries,
+and defining aliases for types.
+
 =head1 KEYWORDS
 
 =head2 C<< class >>
