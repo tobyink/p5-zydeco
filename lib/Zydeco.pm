@@ -2345,7 +2345,7 @@ Factories to help your objects make other objects.
 
 =item *
 
-Powerful and concise attribute definitions
+Powerful and concise attribute definitions.
 
 =item *
 
