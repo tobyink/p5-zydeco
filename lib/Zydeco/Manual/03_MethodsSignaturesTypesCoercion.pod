@@ -536,6 +536,18 @@ In this chapter, we looked at the following keywords:
 
 =head1 NEXT STEPS
 
+This chapter covered some very big topics; methods, signatures, and type
+constraints and coercions. Signatures and types will be used quite a lot
+in the next three chapters as well.
+
+=over
+
+=item *
+
+L<Zydeco::Manual::04_Factories> - Factories to help your objects make other objects
+
+=back
+
 =head1 AUTHOR
 
 Toby Inkster E<lt>tobyink@cpan.orgE<gt>.
