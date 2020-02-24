@@ -276,3 +276,11 @@
 		item "Syntax rewrite in version 0.100 accidentally made the optional block after a coercion declaration required. It is now optional again."^^Bugfix;
 		item "More reliable parsing of aliases for multimethod candidates."^^Bugfix;
 	].
+
+`Zydeco 0.510 cpan:TOBYINK`
+	issued  2020-02-24;
+	changeset [
+		item "Start totally rewriting documentation."^^Documentation;
+		item "Require MooX::Press 0.057."^^Packaging;
+		item "Default to 'ro' accessors."^^Change;
+	].
