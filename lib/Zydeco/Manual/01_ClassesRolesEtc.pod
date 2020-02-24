@@ -326,6 +326,10 @@ In this chapter, we looked at the following keywords:
 
 =back
 
+=head1 TODO
+
+This page should probably detail C<version>, C<authority>, and C<toolkit>.
+
 =head1 NEXT STEPS
 
 The structure and behaviour of objects is defined by classes. In the next

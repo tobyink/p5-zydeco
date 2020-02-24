@@ -10,7 +10,11 @@ Zydeco::Manual::09_Parameterizable - Parameterizable classes and roles
 
 =head1 MANUAL
 
+TODO.
+
 =head1 NEXT STEPS
+
+TODO.
 
 =head1 AUTHOR
 

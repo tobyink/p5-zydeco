@@ -4,13 +4,51 @@
 
 =head1 NAME
 
-Zydeco::Manual::05_MethodModifiers - Method modifiers to easily wrap or override inherited methods
+Zydeco::Manual::06_MethodModifiers - Method modifiers to easily wrap or override inherited methods
 
 =head1 SYNOPSIS
 
+  package MyApp {
+    use Zydeco;
+    
+    class Event {
+      has date;
+      method occur () {
+        ...;
+      }
+    }
+    
+    class Wedding extends Event {
+      before occur {
+        say "Speak now or forever hold your peace";
+      }
+      after occur {
+        say "You may kiss the bride";
+      }
+    }
+  }
+
 =head1 MANUAL
 
+TODO.
+
+=head1 KEYWORDS
+
+In this chapter, we looked at the following keywords:
+
+=over
+
+=item C<< before >>
+
+=item C<< after >>
+
+=item C<< around >>
+
+=back
+
 =head1 NEXT STEPS
+
+TODO.
 
 =head1 AUTHOR
 

@@ -232,6 +232,9 @@ In this chapter, we looked at the following keyword:
 
 =head1 NEXT STEPS
 
+We have looked at three ways to define methods: C<method>, C<factory>, and
+C<< multi method >>. Now let's look at how to modify existing methods.
+
 =over
 
 =item *

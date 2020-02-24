@@ -152,6 +152,10 @@ objects which may be needed by the current object.
     class Wheel;
   }
 
+A key feature of custom factory methods is that although they are I<logically>
+part of the factory package, they are I<lexically> defined within the class,
+so have access to its lexical variables.
+
 =head2 Custom Factory Methods via a Proxy
 
 It is to instead define additional methods in the class itself and then
@@ -200,6 +204,9 @@ In this chapter, we looked at the following keyword:
 =back
 
 =head1 NEXT STEPS
+
+We have already looked at how to define methods, but now let's look at
+multimethods, which can sometimes be a more elegant way to define methods.
 
 =over
 

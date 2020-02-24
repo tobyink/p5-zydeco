@@ -10,7 +10,11 @@ Zydeco::Manual::07_Delegation - Powerful delegation features
 
 =head1 MANUAL
 
+TODO.
+
 =head1 NEXT STEPS
+
+TODO.
 
 =head1 AUTHOR
 

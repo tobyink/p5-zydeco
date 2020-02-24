@@ -52,6 +52,10 @@ L<Zydeco::Manual::10_BeyondZydeco> - Beyond Zydeco
 
 =back
 
+=head1 TODO
+
+Not covered anywhere: C<interface>, C<constant>, hooks.
+
 =head1 AUTHOR
 
 Toby Inkster E<lt>tobyink@cpan.orgE<gt>.

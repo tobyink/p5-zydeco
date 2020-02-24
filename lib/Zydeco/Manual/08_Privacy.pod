@@ -10,7 +10,11 @@ Zydeco::Manual::08_Privacy - True private methods and attribute
 
 =head1 MANUAL
 
+TODO.
+
 =head1 NEXT STEPS
+
+TODO.
 
 =head1 AUTHOR
 
