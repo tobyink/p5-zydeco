@@ -28,11 +28,11 @@ L<Zydeco::Manual::04_Factories> - Factories to help your objects make other obje
 
 =item *
 
-L<Zydeco::Manual::05_MethodModifiers> - Method modifiers to easily wrap or override inherited methods
+L<Zydeco::Manual::05_Multimethods> - multi methods
 
 =item *
 
-L<Zydeco::Manual::06_Multimethods> - multi methods
+L<Zydeco::Manual::06_MethodModifiers> - Method modifiers to easily wrap or override inherited methods
 
 =item *
 

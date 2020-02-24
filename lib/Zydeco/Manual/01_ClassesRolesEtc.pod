@@ -57,6 +57,24 @@ Instead you must wrap it in a C<do> block:
 
 This is called an anonymous class.
 
+=head3 Naming
+
+Zydeco prefixes your class names with the package name.
+
+  package MyApp {
+    use Zydeco;
+    class Foo;          # class name is "MyApp::Foo"
+    class Foo::Bar;     # class name is "MyApp::Foo::Bar"
+  }
+
+Prefixing a class name with "::" avoids this.
+
+  package MyApp {
+    use Zydeco;
+    class ::Foo;        # class name is "Foo"
+    class ::Foo::Bar;   # class name is "Foo::Bar"
+  }
+
 =head2 Objects
 
 When you've created a class, the next thing to do is create objects of that
@@ -237,6 +255,8 @@ is just a prefix for C<class>.
     class Rabbit extends Animal with Adorable?
   }
 
+=head2 Nesting Classes
+
 You might notice this getting a little repetitive.  Zydeco allows you to
 nest subclass definitions within their parent class as a shortcut.
 
@@ -255,6 +275,26 @@ nest subclass definitions within their parent class as a shortcut.
       class Goat with Milkable;
       class Rabbit with Adorable?
     }
+  }
+
+=head3 Plus-Sign Prefix
+
+If you prefix a class name with a plus sign, the class name will be
+prefixed with its parent class.
+
+  package MyApp {
+    class Foo {          # class name is "MyApp::Foo"
+      class +Bar {       # class name is "MyApp::Foo::Bar"
+        class +Baz::Bat; # class name is "MyApp::Foo::Bar::Baz::Bat"
+      }
+    }
+  }
+
+This even works with C<extends>.
+
+  package MyApp {
+    class Foo;               # class name is "MyApp::Foo"
+    class +Bar extends Foo;  # class name is "MyApp::Foo::Bar"
   }
 
 =head1 KEYWORDS

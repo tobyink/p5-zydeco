@@ -187,7 +187,7 @@ One advantage of using a proxy is that subclasses can inherit the method and
 potentially override it.
 
 Another advantage is that the proxied method can be a multimethod.
-(Multimethods are discussed later.)
+(Multimethods are discussed in the next chapter.)
 
 =head1 KEYWORDS
 
@@ -205,7 +205,7 @@ In this chapter, we looked at the following keyword:
 
 =item *
 
-L<Zydeco::Manual::05_MethodModifiers> - Method modifiers to easily wrap or override inherited methods
+L<Zydeco::Manual::05_Multimethods> - multi methods
 
 =back
 
