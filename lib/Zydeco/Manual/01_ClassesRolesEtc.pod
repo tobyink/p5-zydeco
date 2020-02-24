@@ -159,10 +159,12 @@ Anonymous roles are possible.
 Consuming anonymous roles is a little tricky.
 
   class Cow {
-    with {$Milkable};
+    with {"::$Milkable"};
   }
 
-Yes, the braces are currently required.
+The braces mean that the role should be evaluated as a block. The leading
+"::" is required because you don't want the prefix to be added to the role
+name.
 
 The equivalent of C<isa> for roles is C<does>.
 
@@ -181,6 +183,9 @@ But like with checking C<isa>, it's desirable to avoid hard-coding that
   }
 
 The type check functions look so much more elegant anyway.
+
+If you have a role name as a string, you can consume it by putting it in
+braces.
 
 =head2 Tag Roles
 
@@ -231,6 +236,12 @@ override behaviour from the parent class.
 It is possible to both inherit and consume at the same time:
 
   class Piglet extends Pig with Adorable?;
+
+Extending anonymous classes is much like consuming anonymous roles.
+
+  class Piglet {
+    extends { "::" . "Pig" };
+  }
 
 =head2 Abstract Classes
 

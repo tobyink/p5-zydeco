@@ -12,7 +12,7 @@ Zydeco::Manual - Learn OO Programming with Zydeco
 
 =item *
 
-L<Zydeco::Manual::01_ClassesRolesEtc> - Classes, roles, and interfaces, including parameterizable classes and roles
+L<Zydeco::Manual::01_ClassesRolesEtc> - Classes, roles, and interfaces
 
 =item *
 
