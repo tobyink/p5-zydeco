@@ -58,7 +58,7 @@ To declare an attribute, use the C<has> keyword.
     use Zydeco;
     
     class Person {
-      has name;
+      has name ( is => rw );
     }
   }
 
@@ -92,8 +92,8 @@ method different names.
   
   say $bob->fullname();
 
-It's even possible to declare different method names for the getter and
-setter methods:
+It's possible to declare different method names for the getter and setter
+methods:
 
   package MyApp {
     use Zydeco;
@@ -129,10 +129,8 @@ and C<writer>.
   # no init_arg or accessor methods created!
   has foo ( is => private );
 
-Zydeco defaults to C<< is => rw >>, which is the most permissive, but you
-should carefully consider how much you wish to directly expose your attribute
-to code that uses your objects. In particular, making attributes read-only
-can save many headaches.
+Zydeco defaults to C<< is => ro >>. Making attributes read-only can save many
+headaches.
 
 =head2 Required Attributes
 
@@ -220,7 +218,7 @@ It is possible to set a default value for an attribute.
     use Zydeco;
     
     class Person {
-      has name = "Anonymous";
+      has name ( is => rw ) = "Anonymous";
     }
   }
   
@@ -245,6 +243,7 @@ for non-reference values (undef, numbers, and strings).
 
   class Person {
     has name (
+      is      => rw,
       default => "Anonymous",
     );
   }
@@ -253,6 +252,7 @@ For more complex values, that needs to be wrapped in a coderef.
 
   class Person {
     has name_parts (
+      is      => rw,
       default => sub { return ["Joe", "Anonymous"] },
     );
   }
@@ -260,8 +260,9 @@ For more complex values, that needs to be wrapped in a coderef.
 A common pattern is to use one attribute to help set the default for another.
 
   class Person {
-    has name!;
+    has name! ( is => rw );
     has name_parts (
+      is      => rw,
       lazy    => true,
       default => sub {
         my $self = shift;
@@ -337,6 +338,7 @@ gets called when the value of an attribute is set.
 
   class Person {
     has name (
+      is       => rw,
       required => true,
       trigger  => sub {
         my $self = shift;
@@ -355,6 +357,7 @@ You can use a method for a trigger.
 
   class Person {
     has name (
+      is       => rw,
       required => true,
       trigger  => "_trigger_name"
     );
