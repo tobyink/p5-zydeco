@@ -532,6 +532,10 @@ present, even if the method declaration is the last statement in its block.
 This has the side-effect of implying C<< :optimize >> for you, so don't use
 this syntax if you need to close over a variable.
 
+The abbreviated syntax also works for coercions.
+
+  coerce from Str via from_string = $class->new(name => $_);
+
 =head1 KEYWORDS
 
 In this chapter, we looked at the following keywords:
