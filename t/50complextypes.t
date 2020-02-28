@@ -10,7 +10,8 @@ class Foo;
 class Bar {
 	method bar (
 		# Integer or complex thingy
-		Int | ArrayRef[Str|HashRef[~Int]]
+		Int |  # comemnt here
+		ArrayRef[Str|HashRef[~Int]]
 		$baz     # ... called $baz
 		= 999    # defaults to 999
 	) {
