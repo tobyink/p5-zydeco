@@ -3,7 +3,12 @@ use warnings;
 use Test::More;
 use Test::Fatal;
 
-use Test::Requires '5.014';
+BEGIN {
+	if ($] lt '5.016') {
+		plan(skip_all => 'known limitation in Perl 5.14');
+		exit();
+	}
+}
 
 use Zydeco factory_package => 'Local';
 
