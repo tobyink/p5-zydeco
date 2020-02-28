@@ -3,6 +3,8 @@ use warnings;
 use Test::More;
 use Test::Fatal;
 
+use Test::Requires '5.014';
+
 use Zydeco factory_package => 'Local';
 
 class Foo;

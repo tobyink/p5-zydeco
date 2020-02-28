@@ -12,7 +12,7 @@ use feature ();
 package Zydeco;
 
 our $AUTHORITY = 'cpan:TOBYINK';
-our $VERSION   = '0.510';
+our $VERSION   = '0.511';
 
 use Keyword::Simple ();
 use PPR;
@@ -23,8 +23,8 @@ use Types::Standard qw( is_HashRef is_Str );
 
 my $decomment = sub {
 	require Carp;
-	Carp::carp("Using naive comment removal when parsing type constraint; please upgrade perl");
-	shift =~ s/#.*$//grm
+	Carp::carp("Cannot remove comments within a type constraint; please upgrade perl");
+	return $_[0];
 };
 $decomment = \&PPR::decomment if $] >= 5.016;
 
@@ -2206,7 +2206,7 @@ sub _include {
 #{
 #	package Zydeco::Anonymous::Package;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.510';
+#	our $VERSION   = '0.511';
 #	use overload q[""] => sub { ${$_[0]} }, fallback => 1;
 #	sub DESTROY {}
 #	sub AUTOLOAD {
@@ -2217,7 +2217,7 @@ sub _include {
 #	
 #	package Zydeco::Anonymous::Class;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.510';
+#	our $VERSION   = '0.511';
 #	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub new {
 #		my $me = shift;
@@ -2230,12 +2230,12 @@ sub _include {
 #	
 #	package Zydeco::Anonymous::Role;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.510';
+#	our $VERSION   = '0.511';
 #	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	
 #	package Zydeco::Anonymous::ParameterizableClass;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.510';
+#	our $VERSION   = '0.511';
 #	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
@@ -2249,7 +2249,7 @@ sub _include {
 #
 #	package Zydeco::Anonymous::ParameterizableRole;
 #	our $AUTHORITY = 'cpan:TOBYINK';
-#	our $VERSION   = '0.510';
+#	our $VERSION   = '0.511';
 #	our @ISA       = qw(Zydeco::Anonymous::Package);
 #	sub generate_package {
 #		my $me  = shift;
