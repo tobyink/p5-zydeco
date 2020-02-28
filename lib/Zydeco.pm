@@ -250,7 +250,7 @@ our $GRAMMAR = qr{
 				(?&PerlVariable) | (\*(?&PerlIdentifier))
 			)
 			(?:                                           # CAPTURE:postamble
-				\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlTerm))
+				\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlScalarExpr))
 			)?
 		)#</MxpSignatureElement>
 		
@@ -319,6 +319,12 @@ our $GRAMMAR = qr{
 				)?
 			)*
 		)#</MxpCompactRoleList>
+		
+		(?<MxpBlockLike>
+		
+			(?: (?&PerlBlock) ) |
+			(?: [=] (?&PerlOWS) (?&PerlScalarExpr) (?&PerlOWS) [;] )
+		)#</MxpBlockLike>
 		
 		(?<MxpIncludeSyntax>
 		
@@ -545,7 +551,7 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )                           # CAPTURE:code
+			(?: (?&MxpBlockLike) )                        # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpMethodSyntax>
 		
@@ -568,7 +574,7 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )                           # CAPTURE:code
+			(?: (?&MxpBlockLike) )                        # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpMultiSyntax>
 		
@@ -589,7 +595,7 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )                           # CAPTURE:code
+			(?: (?&MxpBlockLike) )                        # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpModifierSyntax>
 		
@@ -612,7 +618,7 @@ our $GRAMMAR = qr{
 				[)]
 			)?
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )                           # CAPTURE:code
+			(?: (?&MxpBlockLike) )                        # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpFactorySyntax>
 		
@@ -645,7 +651,7 @@ our $GRAMMAR = qr{
 				(?&PerlBlock)|(?&PerlIdentifier)|(?&PerlString)
 			)
 			(?&PerlOWS)
-			(?: (?&PerlBlock) )?                          # CAPTURE:code
+			(?: (?&MxpBlockLike) )?                       # CAPTURE:code
 			(?&PerlOWS)
 		)#</MxpCoerceSyntax>
 		
@@ -768,7 +774,7 @@ sub _handle_signature_list {
 			$parsed[-1]{optional} = 1;
 			$sig =~ s/^\?((?&PerlOWS)) $GRAMMAR//xso;
 		}
-		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlTerm)) $GRAMMAR/xso) {
+		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlScalarExpr)) $GRAMMAR/xso) {
 			my ($ws, $default) = ($1, $2);
 			$parsed[-1]{default} = $default;
 			$sig =~ s/^=\Q$ws$default//xs;
@@ -951,6 +957,11 @@ sub _handle_factory_keyword {
 		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
 	
+	if (defined $code and $code =~ /^=(.+)$/s) {
+		$code  = "{ $1 }";
+		$optim = 1;
+	}
+	
 	if ($via) {
 		return sprintf(
 			'q[%s]->_factory(%s, \\(%s));',
@@ -985,10 +996,15 @@ sub _handle_factory_keyword {
 sub _handle_method_keyword {
 	my $me = shift;
 	my ($name, $code, $has_sig, $sig, $attrs) = @_;
-	
+
 	my $optim;
 	for my $attr (@$attrs) {
 		$optim = 1 if $attr =~ /^:optimize\b/;
+	}
+	
+	if (defined $code and $code =~ /^=(.+)$/s) {
+		$code  = "{ $1 }";
+		$optim = 1;
 	}
 	
 	my $lex_name;
@@ -1067,6 +1083,11 @@ sub _handle_multimethod_keyword {
 		}
 	}
 	
+	if (defined $code and $code =~ /^=(.+)$/s) {
+		$code  = "{ $1 }";
+		$optim = 1;
+	}
+	
 	if ($has_sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
@@ -1099,6 +1120,14 @@ sub _handle_modifier_keyword {
 	for my $attr (@$attrs) {
 		$optim = 1 if $attr =~ /^:optimize\b/;
 	}
+	
+	if (defined $code and $code =~ /^=(.+)$/s) {
+		$code  = "{ $1 }";
+		$optim = 1;
+	}
+	
+	# MooX::Press cannot handle optimizing method modifiers
+	$optim = 0;
 	
 	my @names = $me->_handle_name_list($names);
 	

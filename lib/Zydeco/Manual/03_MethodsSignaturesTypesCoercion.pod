@@ -518,6 +518,20 @@ optimizations at compile-time to improve its run-time speed.
 
 In optimized methods you cannot close over variables.
 
+=head2 Abbreviated Syntax
+
+For very short methods, an abbreviated syntax is allowed.
+
+  method is_oversized = $self->value > 100;
+
+The method is defined as usual, but instead of a block, there is an equals
+sign followed by a scalar expression (i.e. any expression with a higher
+precedence than comma), followed by a semicolon. The semicolon must be
+present, even if the method declaration is the last statement in its block.
+
+This has the side-effect of implying C<< :optimize >> for you, so don't use
+this syntax if you need to close over a variable.
+
 =head1 KEYWORDS
 
 In this chapter, we looked at the following keywords:
