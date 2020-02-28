@@ -250,7 +250,7 @@ our $GRAMMAR = qr{
 				(?&PerlVariable) | (\*(?&PerlIdentifier))
 			)
 			(?:                                           # CAPTURE:postamble
-				\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlScalarExpr))
+				\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlScalarExpression))
 			)?
 		)#</MxpSignatureElement>
 		
@@ -323,7 +323,7 @@ our $GRAMMAR = qr{
 		(?<MxpBlockLike>
 		
 			(?: (?&PerlBlock) ) |
-			(?: [=] (?&PerlOWS) (?&PerlScalarExpr) (?&PerlOWS) [;] )
+			(?: [=] (?&PerlOWS) (?&PerlScalarExpression) (?&PerlOWS) [;] )
 		)#</MxpBlockLike>
 		
 		(?<MxpIncludeSyntax>
@@ -774,7 +774,7 @@ sub _handle_signature_list {
 			$parsed[-1]{optional} = 1;
 			$sig =~ s/^\?((?&PerlOWS)) $GRAMMAR//xso;
 		}
-		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlScalarExpr)) $GRAMMAR/xso) {
+		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlScalarExpression)) $GRAMMAR/xso) {
 			my ($ws, $default) = ($1, $2);
 			$parsed[-1]{default} = $default;
 			$sig =~ s/^=\Q$ws$default//xs;
