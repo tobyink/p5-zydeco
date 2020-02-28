@@ -21,6 +21,13 @@ use Exporter::Shiny our @EXPORT = qw( version authority overload );
 use Devel::StrictMode qw(STRICT);
 use Types::Standard qw( is_HashRef is_Str );
 
+my $decomment = sub {
+	require Carp;
+	Carp::carp("Using naive comment removal when parsing type constraint; please upgrade perl");
+	shift =~ s/#.*$//grm
+};
+$decomment = \&PPR::decomment if $] >= 5.016;
+
 BEGIN {
 	package Zydeco::_Gather;
 	my %gather;
@@ -741,7 +748,7 @@ sub _handle_signature_list {
 		}
 		elsif ($sig =~ /^((?&MxpTypeSpec)) $GRAMMAR/xso) {
 			my $type = $1;
-			$parsed[-1]{type}          = ($type =~ /#/) ? PPR::decomment($type) : $type;
+			$parsed[-1]{type}          = ($type =~ /#/) ? $type->$decomment : $type;
 			$parsed[-1]{type_is_block} = 0;
 			$sig =~ s/^\Q$type//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xso;
