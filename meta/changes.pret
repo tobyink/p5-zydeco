@@ -292,3 +292,9 @@
 		item "Allow comments within type constraints within signatures, but only on Perl 5.16+."^^Addition;
 		item "Abbreviated syntax for defining methods, multi methods, factory methods, coercions, and method modifiers."^^Addition;
 	].
+
+`Zydeco 0.512 cpan:TOBYINK`
+	issued  2020-03-02;
+	changeset [
+		item "Output installed module versions for many dependencies."^^Tests;
+	].
