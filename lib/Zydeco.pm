@@ -772,7 +772,7 @@ sub _handle_signature_list {
 			$sig =~ s/^\*\Q$name//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xso;
 		}
-		elsif ($sig =~ /^ ( [\$\@\%] ) (?: [=),?] | (?&PerlNWS) ) $GRAMMAR/xso) {
+		elsif ($sig =~ /^ ( [\$\@\%] ) (?: [=),?] | (?&PerlNWS) | $ ) $GRAMMAR/xso) {
 			state $dummy = 0;
 			my $name = substr($sig,0,1) . '____ZYDECO_DUMMY_VAR_' . ++$dummy;
 			$parsed[-1]{name}       = $name;
