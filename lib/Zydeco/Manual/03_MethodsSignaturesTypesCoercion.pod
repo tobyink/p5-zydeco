@@ -321,6 +321,25 @@ No slurpies!
   $obj->print_html('h1', 'Hello World',   xml => true  , \*STDOUT);
   $obj->print_html('h1', 'Hello World',                  \*STDOUT);
 
+=head3 Placeholder Parameters
+
+A bare sigil can be used as a placeholder for parameters you don't care
+about.
+
+  method xyz ($foo, $, $bar) {
+    say $foo;
+    say $bar;
+  }
+  
+  $obj->xyz("x", "y", "z");    # says "x" then "z"
+
+The value is still available in C<< @_ >> as you would expect.
+
+Placeholders tend to be most useful in method modifiers and multimethods,
+which are discussed in the following chapters.
+
+Placeholders may have defaults and/or type constraints (see the next section).
+
 =head2 Types
 
 Type constraints may be used to ensure that values are of the correct type.
