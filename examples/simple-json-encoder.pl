@@ -3,7 +3,7 @@ use Zydeco prefix => 'MyApp';
 class JSON::Encoder {
 	multi method stringify (Undef $) = 'null';
 	
-	multi method stringify (ScalarRef[Bool] $value) {
+	multi method stringify (  ScalarRef[Bool] $value) {
 		$$value ? 'true' : 'false';
 	}
 	

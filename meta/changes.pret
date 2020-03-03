@@ -300,7 +300,13 @@
 	].
 
 `Zydeco 0.513 cpan:TOBYINK`
-	issued  2020-03-02;
+	issued  2020-03-03;
 	changeset [
-		item "If it is detected that Variable::Magic is installed, make sure it's up-to-date. (I believe older versions are causing problems with B::Hooks::EndOfScope::XS and causing test fails."^^Packaging;
+		item "If it is detected that Variable::Magic is installed, make sure it's up-to-date. (I believe older versions are causing problems with B::Hooks::EndOfScope::XS and causing test fails.)"^^Packaging;
+	].
+
+`Zydeco 0.514 cpan:TOBYINK`
+	issued  2020-03-03;
+	changeset [
+		item "Allow bare sigils in signature list."^^Change;
 	].
