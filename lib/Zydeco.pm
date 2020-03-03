@@ -248,13 +248,18 @@ our $GRAMMAR = qr{
 			(?&MxpTypeSpec)|(?&PerlBlock)
 		)#</MxpExtendedTypeSpec>
 		
+		(?<MxpSignatureVariable>
+			[\$\@\%]
+			(?&PerlIdentifier)
+		)#</MxpSignatureVariable>		
+		
 		(?<MxpSignatureElement>
 		
 			(?&PerlOWS)
 			(?: (?&MxpExtendedTypeSpec))?                 # CAPTURE:type
 			(?&PerlOWS)
 			(?:                                           # CAPTURE:name
-				(?&PerlVariable) | (\*(?&PerlIdentifier))
+				(?&MxpSignatureVariable) | (\*(?&PerlIdentifier) | [\$\@\%] )
 			)
 			(?:                                           # CAPTURE:postamble
 				\? | ((?&PerlOWS)=(?&PerlOWS)(?&PerlScalarExpression))
@@ -767,7 +772,16 @@ sub _handle_signature_list {
 			$sig =~ s/^\*\Q$name//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xso;
 		}
-		elsif ($sig =~ /^((?&PerlVariable)) $GRAMMAR/xso) {
+		elsif ($sig =~ /^ ( [\$\@\%] ) (?: [=),?] | (?&PerlNWS) ) $GRAMMAR/xso) {
+			state $dummy = 0;
+			my $name = substr($sig,0,1) . '____ZYDECO_DUMMY_VAR_' . ++$dummy;
+			$parsed[-1]{name}       = $name;
+			$parsed[-1]{named}      = 0;
+			$parsed[-1]{positional} = 1;
+			$sig = substr($sig, 1);
+			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xs;
+		}
+		elsif ($sig =~ /^((?&MxpSignatureVariable)) $GRAMMAR/xso) {
 			my $name = $1;
 			$parsed[-1]{name}       = $name;
 			$parsed[-1]{named}      = 0;
