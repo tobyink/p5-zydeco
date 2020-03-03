@@ -298,3 +298,9 @@
 	changeset [
 		item "Output installed module versions for many dependencies."^^Tests;
 	].
+
+`Zydeco 0.513 cpan:TOBYINK`
+	issued  2020-03-02;
+	changeset [
+		item "If it is detected that Variable::Magic is installed, make sure it's up-to-date. (I believe older versions are causing problems with B::Hooks::EndOfScope::XS and causing test fails."^^Packaging;
+	].
