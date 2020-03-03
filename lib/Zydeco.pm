@@ -961,6 +961,11 @@ sub _handle_role_list {
 	return join(",", @return);
 }
 
+sub _stringify_attributes {
+	my @quoted = map sprintf(q("%s"), quotemeta(substr $_, 1)), @{ $_[1] || [] };
+	sprintf '[%s]', join q[,], @quoted;
+}
+
 sub _handle_name_list {
 	my ($me, $names) = @_;
 	return unless $names;
@@ -994,9 +999,10 @@ sub _handle_factory_keyword {
 	if (!$has_sig) {
 		my $munged_code = sprintf('sub { my ($factory, $class) = (@_); do %s }', $code);
 		return sprintf(
-			'q[%s]->_factory(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
+			'q[%s]->_factory(%s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$me->_stringify_attributes($attrs),
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$optim,
 		);
@@ -1004,9 +1010,10 @@ sub _handle_factory_keyword {
 	my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 	my $munged_code = sprintf('sub { my($factory,$class,%s)=(shift,shift,@_); %s; do %s }', $signature_var_list, $extra, $code);
 	sprintf(
-		'q[%s]->_factory(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+		'q[%s]->_factory(%s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 		$me,
 		($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+		$me->_stringify_attributes($attrs),
 		$optim ? B::perlstring($munged_code) : $munged_code,
 		!!$signature_is_named,
 		$type_params_stuff,
@@ -1040,9 +1047,10 @@ sub _handle_method_keyword {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 			$return = sprintf(
-				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+				'q[%s]->_can(%s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				$me,
 				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+				$me->_stringify_attributes($attrs),
 				$optim ? B::perlstring($munged_code) : $munged_code,
 				!!$signature_is_named,
 				$type_params_stuff,
@@ -1052,9 +1060,10 @@ sub _handle_method_keyword {
 		else {
 			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 			$return = sprintf(
-				'q[%s]->_can(%s, { caller => __PACKAGE__, code => %s, optimize => %d });',
+				'q[%s]->_can(%s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 				$me,
 				($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+				$me->_stringify_attributes($attrs),
 				$optim ? B::perlstring($munged_code) : $munged_code,
 				!!$optim,
 			);
@@ -1065,8 +1074,9 @@ sub _handle_method_keyword {
 			my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 			$return = sprintf(
-				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+				'q[%s]->wrap_coderef({ attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				'MooX::Press',
+				$me->_stringify_attributes($attrs),
 				$optim ? B::perlstring($munged_code) : $munged_code,
 				!!$signature_is_named,
 				$type_params_stuff,
@@ -1076,8 +1086,9 @@ sub _handle_method_keyword {
 		else {
 			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 			$return = sprintf(
-				'q[%s]->wrap_coderef({ caller => __PACKAGE__, code => %s, optimize => %d });',
+				'q[%s]->wrap_coderef({ attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 				'MooX::Press',
+				$me->_stringify_attributes($attrs),
 				$optim ? B::perlstring($munged_code) : $munged_code,
 				!!$optim,
 			);
@@ -1113,9 +1124,10 @@ sub _handle_multimethod_keyword {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 		return sprintf(
-			'q[%s]->_multimethod(%s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, %s });',
+			'q[%s]->_multimethod(%s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, %s });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$me->_stringify_attributes($attrs),
 			$munged_code,
 			!!$signature_is_named,
 			$type_params_stuff,
@@ -1125,9 +1137,10 @@ sub _handle_multimethod_keyword {
 	else {
 		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 		return sprintf(
-			'q[%s]->_multimethod(%s, { caller => __PACKAGE__, code => %s, named => 0, signature => sub { @_ }, %s });',
+			'q[%s]->_multimethod(%s, { attributes => %s, caller => __PACKAGE__, code => %s, named => 0, signature => sub { @_ }, %s });',
 			$me,
 			($name =~ /^\{/ ? "scalar(do $name)" : B::perlstring($name)),
+			$me->_stringify_attributes($attrs),
 			$munged_code,
 			$extra_code,
 		);
@@ -1166,10 +1179,11 @@ sub _handle_modifier_keyword {
 			$munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
 		}
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 			$me,
 			$kind,
 			$processed_names,
+			$me->_stringify_attributes($attrs),
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$signature_is_named,
 			$type_params_stuff,
@@ -1179,10 +1193,11 @@ sub _handle_modifier_keyword {
 	elsif ($kind eq 'around') {
 		my $munged_code = sprintf('sub { my ($next, $self) = @_; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
 			$processed_names,
+			$me->_stringify_attributes($attrs),
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$optim,
 		);
@@ -1190,10 +1205,11 @@ sub _handle_modifier_keyword {
 	else {
 		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
 		sprintf(
-			'q[%s]->_modifier(q(%s), %s, { caller => __PACKAGE__, code => %s, optimize => %d });',
+			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
 			$kind,
 			$processed_names,
+			$me->_stringify_attributes($attrs),
 			$optim ? B::perlstring($munged_code) : $munged_code,
 			!!$optim,
 		);

@@ -309,4 +309,5 @@
 	issued  2020-03-03;
 	changeset [
 		item "Allow bare sigils in signature list."^^Change;
+		item "Attributes like :lvalue on methods are now passed through to MooX::Press (though MooX::Press currently does nothing with them)."^^Change;
 	].
