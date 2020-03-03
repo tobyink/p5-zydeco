@@ -798,8 +798,15 @@ sub _handle_signature_list {
 		elsif ($sig =~ /^=((?&PerlOWS))((?&PerlScalarExpression)) $GRAMMAR/xso) {
 			my ($ws, $default) = ($1, $2);
 			$parsed[-1]{default} = $default;
+			
 			$sig =~ s/^=\Q$ws$default//xs;
 			$sig =~ s/^((?&PerlOWS)) $GRAMMAR//xso;
+			
+			if ($default =~ / \$ (?: class|self) /xso) {
+				require PadWalker;
+				$default = sprintf('do { my $invocants = PadWalker::peek_my(2)->{q[@invocants]}||PadWalker::peek_my(1)->{q[@invocants]}; my $self=$invocants->[-1]; my $class=ref($self)||$self; %s }', $default);
+				$parsed[-1]{default} = $default;
+			}
 		}
 		
 		if ($sig) {
