@@ -54,6 +54,9 @@ matrix:
       dist: trusty
   allow_failures:
     - perl: "blead"
+cache:
+  directories:
+    - $HOME/perl5
 before_install:
   - export DIST_INKT_PROFILE="Dist::Inkt::Profile::TOBYINK"
   - eval $(curl https://travis-perl.github.io/init) --auto
