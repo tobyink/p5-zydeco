@@ -251,7 +251,7 @@ our $GRAMMAR = qr{
 		(?<MxpSignatureVariable>
 			[\$\@\%]
 			(?&PerlIdentifier)
-		)#</MxpSignatureVariable>		
+		)#</MxpSignatureVariable>
 		
 		(?<MxpSignatureElement>
 		
