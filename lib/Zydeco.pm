@@ -810,8 +810,13 @@ sub _handle_signature_list {
 		}
 		
 		if ($sig) {
-			$sig =~ /^,/ or die "WEIRD SIGNATURE??? $sig";
-			$sig =~ s/^,//;
+			if ($sig =~ /^,/) {
+				$sig =~ s/^,//;
+			}
+			else {
+				require Carp;
+				Carp::croak(sprintf "Could not parse signature (%s), remaining: %s", $_[0], $sig);
+			}
 		}
 	}
 	
@@ -855,7 +860,10 @@ sub _handle_signature_list {
 	while (my $p = shift @parsed) {
 		$type_params_stuff .= B::perlstring($p->{name}) . ',' if $seen_named;
 		if ($p->{name} =~ /^[\@\%]/) {
-			die "Cannot have slurpy in non-final position" if @parsed;
+			if (@parsed) {
+				require Carp;
+				Carp::croak("Cannot have slurpy parameter $p->{name} in non-final position");
+			}
 			$extra .= sprintf(
 				'my (%s) = (@_==%d ? %s{$_[-1]} : ());',
 				$p->{name},
@@ -934,11 +942,15 @@ sub _handle_role_list {
 			$rolelist =~ s/^\s+//xs;
 		}
 		else {
-			die "expected role name, got $rolelist";
+			require Carp;
+			Carp::croak("Expected role name, got $rolelist");
 		}
 		
 		if ($rolelist =~ /^\?/xs) {
-			die 'unexpected question mark' if $kind eq 'class';
+			if ($kind eq 'class') {
+				require Carp;
+				Carp::croak("Unexpected question mark suffix in class list");
+			}
 			$suffix = '?';
 			$rolelist =~ s/^\?\s*//xs;
 		}
@@ -960,8 +972,13 @@ sub _handle_role_list {
 		
 		$rolelist =~ s/^\s+//xs;
 		if (length $rolelist) {
-			$rolelist =~ /^,/ or die "expected comma, got $rolelist";
-			$rolelist =~ s/^\,\s*//;
+			if ($rolelist =~ /^,/) {
+				$rolelist =~ s/^\,\s*//;
+			}
+			else {
+				require Carp;
+				Carp::croak(sprintf "Could not parse role list (%s), remaining: %s", $_[0], $rolelist);
+			}
 		}
 	}
 	
@@ -1614,7 +1631,8 @@ sub import {
 					push @processed_imports, sprintf('%sX::%s', $name, $next);
 				}
 				else {
-					die "Expected package name, got $next";
+					require Carp;
+					Carp::croak("Expected package name, got $next");
 				}
 				$imports[0] eq ',' and shift @imports;
 			}
