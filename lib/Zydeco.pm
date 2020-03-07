@@ -366,13 +366,13 @@ our $GRAMMAR = qr{
 			)?
 			(?&PerlOWS)
 			(?:
-				extends
+				(?: extends | isa | is )
 				(?&PerlOWS)
 				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_extends
 				(?&PerlOWS)
 			)?
 			(?:
-				with
+				(?: with | does )
 				(?&PerlOWS)
 				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
 				(?&PerlOWS)
@@ -404,13 +404,13 @@ our $GRAMMAR = qr{
 			)?
 			(?&PerlOWS)
 			(?:
-				extends
+				(?: extends | isa | is )
 				(?&PerlOWS)
 				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_extends
 				(?&PerlOWS)
 			)?
 			(?:
-				with
+				(?: with | does )
 				(?&PerlOWS)
 				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
 				(?&PerlOWS)
@@ -439,7 +439,7 @@ our $GRAMMAR = qr{
 			)?
 			(?&PerlOWS)
 			(?:
-				with
+				(?: with | does )
 				(?&PerlOWS)
 				(?: (?&MxpCompactRoleList) )               # CAPTURE:compact_with
 				(?&PerlOWS)
