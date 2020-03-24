@@ -311,3 +311,9 @@
 		item "Allow bare sigils in signature list."^^Change;
 		item "Attributes like :lvalue on methods are now passed through to MooX::Press (though MooX::Press currently does nothing with them)."^^Change;
 	].
+
+`Zydeco 0.515 cpan:TOBYINK`
+	issued  2020-03-24;
+	changeset [
+		item "Fix for parsing factory/via statements."^^Bugfix;
+	].
