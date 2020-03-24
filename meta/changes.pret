@@ -317,3 +317,9 @@
 	changeset [
 		item "Fix for parsing factory/via statements."^^Bugfix;
 	].
+
+`Zydeco 0.516 cpan:TOBYINK`
+	issued  2020-03-24;
+	changeset [
+		item "Require Keyword::Simple 0.04."^^Packaging;
+	].
