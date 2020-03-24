@@ -640,10 +640,9 @@ our $GRAMMAR = qr{
 			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
 			(?&PerlOWS)
 			(?:
-				(: via )
-				(?:                                        # CAPTURE:via
-					(?&PerlBlock)|(?&PerlIdentifier)|(?&PerlString)
-				)
+				(?: via )
+				(?&PerlOWS)
+				(?: (?&MxpSimpleIdentifier) )              # CAPTURE:via
 			)?
 			(?&PerlOWS)
 		)#</MxpFactoryViaSyntax>
@@ -1866,6 +1865,7 @@ sub import {
 		
 		my ($pos, $name, $via) = ($+[0], $+{name}, $+{via});
 		$via ||= 'new';
+		
 		$me->_inject($ref, $pos, $me->_handle_factory_keyword($name, $via, undef, undef, undef, []));
 	} if $want{factory};
 	
