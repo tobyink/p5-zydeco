@@ -323,3 +323,10 @@
 	changeset [
 		item "Require Keyword::Simple 0.04."^^Packaging;
 	].
+
+`Zydeco 0.517 cpan:TOBYINK`
+	issued  2020-04-08;
+	changeset [
+		item "Use the latest version of MooX::Press."^^Packaging;
+		item "Support `multi factory` for classes."^^Addition;
+	].
