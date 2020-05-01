@@ -330,3 +330,10 @@
 		item "Use the latest version of MooX::Press."^^Packaging;
 		item "Support `multi factory` for classes."^^Addition;
 	].
+
+`Zydeco 0.518 cpan:TOBYINK`
+	issued  2020-04-08;
+	changeset [
+		item "Use the latest version of MooX::Press."^^Packaging;
+		item "Document method modifiers."^^Documentation;
+	].
