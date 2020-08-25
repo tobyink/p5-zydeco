@@ -337,3 +337,10 @@
 		item "Use the latest version of MooX::Press."^^Packaging;
 		item "Document method modifiers."^^Documentation;
 	].
+
+`Zydeco 0.519 cpan:TOBYINK`
+	issued  2020-08-25;
+	changeset [
+		item "Use the latest version of MooX::Press."^^Packaging;
+		item "Document :coerce / :coercion."^^Documentation;
+	].
