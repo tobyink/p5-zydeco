@@ -41,7 +41,7 @@ BEGIN {
 		# Figure out type name
 		return if $kind =~ /role_generator/;
 		my %opts = (%$opts, %$pkgopts);
-		my $qname    = 'MooX::Press'->qualify_name($pkg, $opts{'prefix'}, $opts{'extends'});
+		my $qname = 'MooX::Press'->qualify_name($pkg, $opts{'prefix'}, $opts{'extends'}//$opts{'_stack'}[-1]);
 		
 		if ($kind =~ /class_generator/) {
 			my $typename1 = $opts{'class_type_name'}
