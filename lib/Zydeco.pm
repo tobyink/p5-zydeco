@@ -39,11 +39,11 @@ BEGIN {
 	sub _predeclare {
 		my ($me, $opts, $kind, $pkg, $pkgopts) = @_;
 		# Figure out type name
-		return if $kind eq 'role_generator';
+		return if $kind =~ /role_generator/;
 		my %opts = (%$opts, %$pkgopts);
 		my $qname    = 'MooX::Press'->qualify_name($pkg, $opts{'prefix'}, $opts{'extends'});
 		
-		if ($kind eq 'class_generator') {
+		if ($kind =~ /class_generator/) {
 			my $typename1 = $opts{'class_type_name'}
 				|| sprintf('%sClass', 'MooX::Press'->type_name($qname, $opts{'prefix'}));
 			my $typename2 = $opts{'instance_type_name'}
