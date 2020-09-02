@@ -36,6 +36,25 @@ BEGIN {
 		my ($me, $caller) = @_;
 		!!$gather{$me}{$caller};
 	}
+	sub _predeclare {
+		my ($me, $opts, $kind, $pkg, $pkgopts) = @_;
+		# Figure out type name
+		return if $kind eq 'role_generator';
+		my %opts = (%$opts, %$pkgopts);
+		my $qname    = 'MooX::Press'->qualify_name($pkg, $opts{'prefix'}, $opts{'extends'});
+		
+		if ($kind eq 'class_generator') {
+			my $typename1 = $opts{'class_type_name'}
+				|| sprintf('%sClass', 'MooX::Press'->type_name($qname, $opts{'prefix'}));
+			my $typename2 = $opts{'instance_type_name'}
+				|| sprintf('%sInstance', 'MooX::Press'->type_name($qname, $opts{'prefix'}));
+			'Zydeco'->_predeclare($opts{'caller'}, $opts{'type_library'}, $typename1, $typename2);
+		}
+		else {
+			my $typename = $opts{'type_name'} || 'MooX::Press'->type_name($qname, $opts{'prefix'});
+			'Zydeco'->_predeclare($opts{'caller'}, $opts{'type_library'}, $typename);
+		}
+	}
 	sub import {
 		my ($me, $action, $caller) = (shift, shift, scalar caller);
 		if ($action eq -gather) {
@@ -50,6 +69,7 @@ BEGIN {
 						}
 					}
 					push @{ $gather{$me}{$caller}{$kind}||=[] }, $pkg, $v;
+					$me->_predeclare( $gather{$me}{$caller}, $kind, $pkg, $v );
 				}
 				else {
 					$gather{$me}{$caller}{$k} = $v;
@@ -1469,6 +1489,33 @@ sub unimport {
 	goto \&Exporter::Tiny::unimport;
 }
 
+sub _predeclare {
+	my ($me, $caller, $types, @names) = @_;
+	
+	for my $name (@names) {
+		my $cached;
+		my $T = sub () {
+			if ( !$cached or $cached->isa('Type::Tiny::_DeclaredType') ) {
+				my $got = $types->can('get_type') && $types->get_type($name);
+				$cached = $got if $got;
+				$cached ||= 'Type::Tiny::_DeclaredType'->new(
+					name    => $name,
+					library => $types,
+				);
+			}
+			$cached;
+		};
+		eval qq{
+			package Zydeco; # allow namespace::autoclean to clean them
+			no warnings 'redefine';
+			*$caller\::$name        = \$T;
+			*$caller\::is_$name     = sub (\$) { \$T->()->check(\@_) };
+			*$caller\::assert_$name = sub (\$) { \$T->()->assert_return(\@_) };
+			1;
+		} or die($@);
+	}
+}
+
 sub import {
 	no warnings 'closure';
 	my ($me, %opts) = (shift, @_);
@@ -1488,14 +1535,7 @@ sub import {
 	#
 	if ($opts{declare}) {
 		my $types = $opts{type_library};
-		for my $name (@{ $opts{declare} }) {
-			eval qq{
-				sub $caller\::$name         ()   { goto \\&$types\::$name }
-				sub $caller\::is_$name      (\$) { goto \\&$types\::is_$name }
-				sub $caller\::assert_$name  (\$) { goto \\&$types\::assert_$name }
-				1;
-			} or die($@);
-		}
+		$me->_predeclare($caller, $types, @{ $opts{declare} });
 	}
 	
 	# Export utility stuff
