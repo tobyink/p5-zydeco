@@ -1557,7 +1557,7 @@ sub import {
 	my @libs = qw/ Types::Standard Types::Common::Numeric Types::Common::String /;
 	push @libs, $opts{type_library} if $opts{type_library}->isa('Type::Library');
 	for my $library (@libs) {
-		$library->import::into($caller, $_)
+		$library->import::into($caller, { replace => 1 }, $_)
 			for grep $want{$_}, qw( -types -is -assert );
 	}
 	
