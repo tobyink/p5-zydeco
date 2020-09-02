@@ -344,3 +344,10 @@
 		item "Use the latest version of MooX::Press."^^Packaging;
 		item "Document :coerce / :coercion."^^Documentation;
 	].
+
+`Zydeco 0.520 cpan:TOBYINK`
+	issued  2020-09-02;
+	changeset [
+		item "Use the latest version of MooX::Press."^^Packaging;
+		item "Automatically import types into the caller package for each new class and role as it is defined."^^Change;
+	].
