@@ -3,11 +3,12 @@ use Data::Dumper;
 
 package MyApp {
 	use Zydeco;
-	use Carp 'confess';
 	
-	role Struct ( @spec ) {
+	role Struct ( @spec ) {		
+		confess 'Bad spec'
+			if @spec % 2;
+		
 		my @attrs;
-		confess 'Bad spec' if @spec % 2;
 		for ( my $ix = 0; $ix < @spec; $ix +=2 ) {
 			my ( $attr, $type ) = @spec[ $ix, $ix+1 ];
 			push @attrs, $attr;
@@ -19,7 +20,7 @@ package MyApp {
 		method VALUES () { map $self->$_, @attrs }
 		
 		method FROM_VALUES ( @values ) {
-			confess sprintf('Expected %d values; got %d', scalar(@attrs), scalar(@values))
+			confess 'Expected %d values; got %d', scalar(@attrs), scalar(@values)
 				unless @attrs == @values;
 			$class->new( map { $attrs[$_] => $values[$_] } 0 .. $#attrs );
 		}

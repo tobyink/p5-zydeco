@@ -1491,7 +1491,7 @@ sub _inject {
 my @EXPORTABLES = qw(
 	-booleans
 	-privacy
-	-utils
+	-util
 	-types
 	-is
 	-assert
