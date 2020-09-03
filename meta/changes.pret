@@ -357,3 +357,9 @@
 	changeset [
 		item "Make = shortcut for method bodies smarter at deciding when to optimize and when it needs to properly close over variables."^^Change;
 	].
+
+`Zydeco 0.600 cpan:TOBYINK`
+	issued  2020-09-03;
+	changeset [
+		item "Protect lexical attributes and methods with Internals::SvREADONLY. This is almost certainly what you want."^^Change;
+	].
