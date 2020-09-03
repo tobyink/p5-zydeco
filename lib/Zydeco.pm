@@ -1154,7 +1154,7 @@ sub _handle_method_keyword {
 	}
 	
 	if ($lex_name) {
-		return "my $lex_name = $return";
+		return "my $lex_name = $return; &Internals::SvREADONLY(\\$lex_name, 1);";
 	}
 	
 	return $return;
@@ -1376,6 +1376,7 @@ sub _handle_has_keyword {
 	my @names = $me->_handle_name_list($names);
 	
 	my @r;
+	my @make_read_only;
 	for my $name (@names) {
 		$name =~ s/^\+\*/+/;
 		$name =~ s/^\*//;
@@ -1390,6 +1391,7 @@ sub _handle_has_keyword {
 				$name,
 				$rawspec,
 			);
+			push @make_read_only, $name;
 		}
 		else {
 			push @r, sprintf(
@@ -1400,6 +1402,15 @@ sub _handle_has_keyword {
 			);
 		}
 	}
+	
+	if (@make_read_only) {
+		push @r, sprintf(
+			'q[%s]->_end(sub { &Internals::SvREADONLY($_, 1) for %s; })',
+			$me,
+			join(q{,}, map("\\$_", @make_read_only)),
+		);
+	}
+	
 	join ";", @r;
 }
 
