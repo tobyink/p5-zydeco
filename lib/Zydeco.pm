@@ -19,7 +19,7 @@ use PPR;
 use B::Hooks::EndOfScope;
 use Exporter::Shiny our @EXPORT = qw( version authority overload );
 use Devel::StrictMode qw(STRICT);
-use Types::Standard qw( is_HashRef is_Str );
+use Types::Standard qw( is_HashRef is_CodeRef is_Str );
 
 my $decomment = sub {
 	require Carp;
@@ -2234,23 +2234,53 @@ sub _requires {
 sub _coerce {
 	my $me = shift;
 	
+	my $soft_target = $TARGET || caller;
+	
 	if (is_HashRef $TARGET) {
 		push @{ $TARGET->{coerce}||=[] }, @_;
 		return;
 	}
-	
-	$me->_syntax_error('coercion declaration', 'Not supported outside class');
+	elsif (is_Str $soft_target
+	and $soft_target->can('new')
+	and $soft_target->can('FACTORY')) {
+		# the things I do for love
+		if ( is_CodeRef $_[2] ) {
+			my $code = $_[2];
+			'MooX::Press'->install_methods(
+				$soft_target,
+				{ $_[1] => sub { local $_ = $_[1]; &$code } },
+			)
+		}
+		my $to_type   = $soft_target->FACTORY->type_library->get_type_for_package( any => $soft_target );
+		my $from_type = 'Type::Registry'->for_class($soft_target)->lookup($_[0]);
+		$to_type->coercion->add_type_coercions(
+			$from_type,
+			sprintf('%s->%s($_)', B::perlstring($soft_target), $_[1]),
+		);
+	}
+	else {
+		$me->_syntax_error('coercion declaration', 'Not supported outside class');
+	}
 }
 
 sub _factory {
 	my $me = shift;
 	
+	my $soft_target = $TARGET || caller;
+	
 	if (is_HashRef $TARGET) {
 		push @{ $TARGET->{factory}||=[] }, @_;
 		return;
 	}
-	
-	$me->_syntax_error('factory method declaration', 'Not supported outside class');
+	elsif (is_Str $soft_target
+	and $soft_target->can('new')
+	and $soft_target->can('FACTORY')
+	and 'MooX::Press'->can('install_factories')) {
+		'MooX::Press'->install_factories( $soft_target->FACTORY, $soft_target, [@_] );
+	}
+	else {
+		$me->_syntax_error('factory method declaration', 'Not supported outside class');
+	}
 }
 
 sub _constant {
