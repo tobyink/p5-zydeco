@@ -1022,7 +1022,7 @@ my $_should_optimize = sub {
 	my ($code, $sigvars) = @_;
 	
 	my %allowed = ( '$self' => undef, '$class' => undef, '$_' => undef, '@_' => undef );
-	undef $allowed{$_} for split /\s*,\s*/, $sigvars;
+	undef $allowed{$_} for split /\s*,\s*/, $sigvars//'';
 	
 	my @vars = ( $code =~ /[\$\@\%]\w+/g );
 	foreach my $var (@vars) {
