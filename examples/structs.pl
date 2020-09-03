@@ -63,6 +63,8 @@ package MyApp {
 use MyApp 'new_point3d';
 use MyApp::Types 'to_Point3D';
 
-print Dumper( to_Point3D[ 1, 2, 3.1 ] );
-
-print Dumper( to_Point3D { x=>1, y=>2, z=>3.1 } );
+print Dumper           to_Point3D [ 1, 2, 3.1 ];
+print Dumper           to_Point3D { x => 1, y => 2, z => 3.1 };
+print Dumper          new_point3d ( 1, 2, 3.1 );
+print Dumper 'MyApp'->new_point3d ( 1, 2, 3.1 );
+print Dumper 'MyApp::Point3D'->new( x => 1, y => 2, z => 3.1 );
