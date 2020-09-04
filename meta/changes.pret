@@ -363,3 +363,11 @@
 	changeset [
 		item "Protect lexical attributes and methods with Internals::SvREADONLY. This is almost certainly what you want."^^Change;
 	].
+
+`Zydeco 0.601 cpan:TOBYINK`
+	issued  2020-09-04;
+	changeset [
+		item "The `blessed` and `confess` functions weren't being exported correctly."^^Bugfix;
+		item "The `coerce` and `factory` keywords now work within `after_apply` and `before_apply` hooks."^^Addition;
+		item "Improvements to the structs.pl example."^^Documentation;
+	].
