@@ -1100,11 +1100,16 @@ sub _handle_method_keyword {
 		$lex_name = $name;
 	}
 	
+	my $inject_vars = 'my $class = ref($self)||$self';
+	if ( $code =~ /\$\s*factory/ ) {
+		$inject_vars .= '; my $factory = $self->FACTORY';
+	}
+	
 	my $return = '';
 	
 	if (defined $name and not defined $lex_name) {
 		if ($has_sig) {
-			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; %s; do %s }', $signature_var_list, $extra, $inject_vars, $code);
 			$return = sprintf(
 				'q[%s]->_can(%s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				$me,
@@ -1117,7 +1122,7 @@ sub _handle_method_keyword {
 			);
 		}
 		else {
-			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+			my $munged_code = sprintf('sub { my $self = $_[0]; %s; do %s }', $inject_vars, $code);
 			$return = sprintf(
 				'q[%s]->_can(%s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 				$me,
@@ -1130,7 +1135,7 @@ sub _handle_method_keyword {
 	}
 	else {
 		if ($has_sig) {
-			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; %s; do %s }', $signature_var_list, $extra, $inject_vars, $code);
 			$return = sprintf(
 				'q[%s]->wrap_coderef({ attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
 				'MooX::Press',
@@ -1142,7 +1147,7 @@ sub _handle_method_keyword {
 			);
 		}
 		else {
-			my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+			my $munged_code = sprintf('sub { my $self = $_[0]; %s; do %s }', $inject_vars, $code);
 			$return = sprintf(
 				'q[%s]->wrap_coderef({ attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 				'MooX::Press',
@@ -1180,8 +1185,13 @@ sub _handle_multi_keyword {
 		$optim ||= $_should_optimize->($code, $signature_var_list);
 	}
 	
+	my $inject_vars = 'my $class = ref($self)||$self';
+	if ( $code =~ /\$\s*factory/ ) {
+		$inject_vars .= '; my $factory = $self->FACTORY';
+	}
+	
 	if ($has_sig) {
-		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+		my $munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; %s; do %s }', $signature_var_list, $extra, $inject_vars, $code);
 		return sprintf(
 			'q[%s]->_multi(%s => %s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, %s });',
 			$me,
@@ -1195,7 +1205,7 @@ sub _handle_multi_keyword {
 		);
 	}
 	else {
-		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+		my $munged_code = sprintf('sub { my $self = $_[0]; %s; do %s }', $inject_vars, $code);
 		return sprintf(
 			'q[%s]->_multi(%s => %s, { attributes => %s, caller => __PACKAGE__, code => %s, named => 0, signature => sub { @_ }, %s });',
 			$me,
@@ -1223,6 +1233,11 @@ sub _handle_modifier_keyword {
 		$optim ||= $_should_optimize->($code, $signature_var_list);
 	}
 	
+	my $inject_vars = 'my $class = ref($self)||$self';
+	if ( $code =~ /\$\s*factory/ ) {
+		$inject_vars .= '; my $factory = $self->FACTORY';
+	}
+	
 	# MooX::Press cannot handle optimizing method modifiers
 	$optim = 0;
 	
@@ -1235,10 +1250,10 @@ sub _handle_modifier_keyword {
 	if ($has_sig) {
 		my $munged_code;
 		if ($kind eq 'around') {
-			$munged_code = sprintf('sub { my($next,$self,%s)=(shift,shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			$munged_code = sprintf('sub { my($next,$self,%s)=(shift,shift,@_); %s; %s; do %s }', $signature_var_list, $extra, $inject_vars, $code);
 		}
 		else {
-			$munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; my $class = ref($self)||$self; do %s }', $signature_var_list, $extra, $code);
+			$munged_code = sprintf('sub { my($self,%s)=(shift,@_); %s; %s; do %s }', $signature_var_list, $extra, $inject_vars, $code);
 		}
 		sprintf(
 			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, named => %d, signature => %s, optimize => %d });',
@@ -1253,7 +1268,7 @@ sub _handle_modifier_keyword {
 		);
 	}
 	elsif ($kind eq 'around') {
-		my $munged_code = sprintf('sub { my ($next, $self) = @_; my $class = ref($self)||$self; do %s }', $code);
+		my $munged_code = sprintf('sub { my ($next, $self) = @_; %s; do %s }', $inject_vars, $code);
 		sprintf(
 			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
@@ -1265,7 +1280,7 @@ sub _handle_modifier_keyword {
 		);
 	}
 	else {
-		my $munged_code = sprintf('sub { my $self = $_[0]; my $class = ref($self)||$self; do %s }', $code);
+		my $munged_code = sprintf('sub { my $self = $_[0]; %s; do %s }', $inject_vars, $code);
 		sprintf(
 			'q[%s]->_modifier(q(%s), %s, { attributes => %s, caller => __PACKAGE__, code => %s, optimize => %d });',
 			$me,
@@ -1366,8 +1381,12 @@ sub _handle_has_keyword {
 	
 	$rawspec = '()' if !defined $rawspec;
 	
-	if (defined $default and $default =~ /\$self/) {
-		$rawspec = "lazy => !!1, default => sub { my \$self = \$_[0]; $default }, $rawspec";
+	if (defined $default and $default =~ /\$\s*(?:self|class|factory)/) {
+		my $inject_vars = 'my $class = ref($self)||$self';
+		if ( $default =~ /\$\s*factory/ ) {
+			$inject_vars .= '; my $factory = $self->FACTORY';
+		}
+		$rawspec = "lazy => !!1, default => sub { my \$self = \$_[0]; $inject_vars; $default }, $rawspec";
 	}
 	elsif (defined $default) {
 		$rawspec = "default => sub { $default }, $rawspec";
