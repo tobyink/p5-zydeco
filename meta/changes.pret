@@ -371,3 +371,9 @@
 		item "The `coerce` and `factory` keywords now work within `after_apply` and `before_apply` hooks."^^Addition;
 		item "Improvements to the structs.pl example."^^Documentation;
 	].
+
+`Zydeco 0.602 cpan:TOBYINK`
+	issued  2020-09-11;
+	changeset [
+		item "Make $factory variable available within `has` defaults, `method` bodies, `multi method` bodies, and method modifier bodies."^^Addition;
+	].
