@@ -377,3 +377,9 @@
 	changeset [
 		item "Make $factory variable available within `has` defaults, `method` bodies, `multi method` bodies, and method modifier bodies."^^Addition;
 	].
+
+`Zydeco 0.603 cpan:TOBYINK`
+	issued  2020-09-12;
+	changeset [
+		item "The `include` keyword now loads *.zydeco.pm files instead of *.pl files."^^Change;
+	].
