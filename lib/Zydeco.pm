@@ -2378,8 +2378,18 @@ sub _include {
 	
 	require Path::ScanINC;
 	my @chunks = split /::/, $_[0];
-	$chunks[-1] .= '.pl';
+	$chunks[-1] .= '.zydeco.pm';
 	my $file = Path::ScanINC->new->first_file(@chunks);
+	
+	if (!$file) {
+		my @fallback = @chunks;
+		$fallback[-1] =~ s/\.zydeco\.pm$/.pl/;
+		$file = Path::ScanINC->new->first_file(@fallback);
+		if ($file) {
+			require Carp;
+			Carp::carp("Include .pl deprecated, use .zydeco.pm instead. Loaded: " . join("/", @fallback));
+		}
+	}
 	
 	if (!$file) {
 		require Carp;
@@ -3003,11 +3013,11 @@ class will not be able to see functions exported into the class.
     include Classes;
   }
   
-  # MpApp/Roles.pl
+  # MpApp/Roles.zydeco.pm
   role Foo;
   role Bar;
   
-  # MyApp/Classes.pl
+  # MyApp/Classes.zydeco.pm
   class Foo::Bar with Foo, Bar;
 
 =head2 C<< Zydeco::PACKAGE_SPEC() >>
