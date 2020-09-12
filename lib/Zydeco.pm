@@ -3013,7 +3013,7 @@ class will not be able to see functions exported into the class.
     include Classes;
   }
   
-  # MpApp/Roles.zydeco.pm
+  # MyApp/Roles.zydeco.pm
   role Foo;
   role Bar;
   
