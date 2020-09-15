@@ -383,3 +383,9 @@
 	changeset [
 		item "The `include` keyword now loads *.zydeco.pm files instead of *.pl files."^^Change;
 	].
+
+`Zydeco 0.604 cpan:TOBYINK`
+	issued  2020-09-15;
+	changeset [
+		item "Factor out a lot of code for run-time modification of packages (which happens in hooks) to MooX::Press, allowing code to be shared with Zydeco::Lite."^^Change;
+	].
