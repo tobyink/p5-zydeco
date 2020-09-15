@@ -2050,7 +2050,7 @@ sub _define_or_patch (&;$) {
 }
 
 sub _define_do_not_patch (&) {
-	my $do = shift;	
+	my $do = shift;
 	if ( is_HashRef $TARGET ) {
 		$_ = $TARGET;
 	}
@@ -2224,7 +2224,7 @@ sub _toolkit {
 	_define_do_not_patch {
 		$_->{toolkit} = $toolkit;
 		push @{ $_->{import}||=[] }, @imports if @imports;
-	} or	
+	} or
 	$me->_syntax_error('toolkit declaration', 'Not supported outside class or role (use import option instead)');
 }
 
@@ -2273,7 +2273,7 @@ sub _multi {
 	if ($kind eq 'factory') {
 		_define_or_patch { push @{$_->{multifactory}||=[]}, $name, $spec } or
 		$me->_syntax_error('multi factory method declaration', 'Not supported outside class');
-	}	
+	}
 	else {
 		_define_or_patch { push @{$_->{multimethod}||=[]}, $name, $spec } scalar(caller);
 	}
@@ -2281,7 +2281,7 @@ sub _multi {
 
 sub _modifier {
 	my $me = shift;
-	my ($kind, @args) = @_;	
+	my ($kind, @args) = @_;
 	_define_or_patch { push @{$_->{$kind}||=[]}, @args } scalar(caller);
 }
 
