@@ -2530,6 +2530,9 @@ Syntactic sugar as sweet as pecan pie
 
 L<Zydeco::Manual> is probably the best place to start.
 
+If Zydeco is too slow or has too many dependencies for you, check out
+L<Zydeco::Lite>.
+
 =head1 KEYWORDS
 
 =head2 C<< class >>
@@ -3068,9 +3071,11 @@ L<Zydeco::Manual>.
 Zydeco website:
 L<http://zydeco.toby.ink/>.
 
-Less magic version:
+Less magic versions:
+L<Zydeco::Lite>,
 L<MooX::Press>.
-(Zydeco is just a wrapper around MooX::Press, providing a nicer syntax.)
+(Zydeco is just a wrapper around MooX::Press, providing a nicer syntax.
+Zydeco::Lite is an alternative wrapper, using less magic.)
 
 Important underlying technologies:
 L<Moo>, L<Type::Tiny::Manual>, L<Sub::HandlesVia>, L<Sub::MultiMethod>,
