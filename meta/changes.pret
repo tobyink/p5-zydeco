@@ -389,3 +389,9 @@
 	changeset [
 		item "Factor out a lot of code for run-time modification of packages (which happens in hooks) to MooX::Press, allowing code to be shared with Zydeco::Lite."^^Change;
 	].
+
+`Zydeco 0.605 cpan:TOBYINK`
+	issued  2020-09-15;
+	changeset [
+		item "Make use of MooX::Press::make_absolute_package_name()."^^Change;
+	].
