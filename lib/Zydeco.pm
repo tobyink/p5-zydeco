@@ -2394,7 +2394,7 @@ sub anonymous_package {
 	
 	require MooX::Press;
 	my $method = "make_$kind";
-	MooX::Press->$method("::$qname", %opts, %$package_dfn);
+	MooX::Press->$method(MooX::Press::make_absolute_package_name($qname), %opts, %$package_dfn);
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
@@ -2409,7 +2409,7 @@ sub anonymous_generator {
 	
 	require MooX::Press;
 	my $method = "make_$kind\_generator";
-	MooX::Press->$method("::$qname", %opts, generator => $callback);
+	MooX::Press->$method(MooX::Press::make_absolute_package_name($qname), %opts, generator => $callback);
 	
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
