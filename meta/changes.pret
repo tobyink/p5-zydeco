@@ -395,3 +395,13 @@
 	changeset [
 		item "Make use of MooX::Press::make_absolute_package_name()."^^Change;
 	].
+
+`Zydeco 0.606 cpan:TOBYINK`
+	issued  2020-09-15;
+	changeset [
+		item [
+			a dcs:Bugfix;
+			label "Fixes for parsing `extends` and `with` outside of `class`/`role` blocks.";
+			seealso <https://github.com/tobyink/p5-zydeco/issues/5>;
+		];
+	].
