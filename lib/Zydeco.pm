@@ -315,7 +315,7 @@ our $GRAMMAR = qr{
 				(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 			)
 			(?:
-				(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
 			)?
 			(?:
 				(?&PerlOWS)
@@ -325,7 +325,7 @@ our $GRAMMAR = qr{
 					(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 				)
 				(?:
-					(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
 				)?
 			)*
 		)#</MxpRoleList>
@@ -337,7 +337,7 @@ our $GRAMMAR = qr{
 				(?&PerlQualifiedIdentifier)
 			)
 			(?:
-				(?:\s*\?) | (?: [(] (?&PerlOWS)(?&PerlList) [)] )
+				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
 			)?
 			(?:
 				(?&PerlOWS)
@@ -347,7 +347,7 @@ our $GRAMMAR = qr{
 					(?&PerlQualifiedIdentifier)
 				)
 				(?:
-					(?:\s*\?) | (?: [(] (?&PerlOWS)(?&PerlList) [)] )
+					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
 				)?
 			)*
 		)#</MxpCompactRoleList>
