@@ -21,7 +21,10 @@ Zydeco::Manual::01_ClassesRolesEtc - Classes, roles, and abstract classes
       }
     }
     
-    class Cow extends Animal with Milkable;
+    class Cow {           
+       extends Animal;      
+       with Milkable;     
+    } 
   }
   
   my $daisy = Farming->new_cow(name => "Daisy");
