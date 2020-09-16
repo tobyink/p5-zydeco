@@ -331,13 +331,13 @@ our $GRAMMAR = qr{
 		)#</MxpRoleList>
 		
 		(?<MxpCompactRoleList>
-		
+			
 			(?&PerlOWS)
 			(?:
 				(?&PerlQualifiedIdentifier)
 			)
 			(?:
-				(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+				(?:\s*\?) | (?: [(] (?&PerlOWS)(?&PerlList) [)] )
 			)?
 			(?:
 				(?&PerlOWS)
@@ -347,7 +347,7 @@ our $GRAMMAR = qr{
 					(?&PerlQualifiedIdentifier)
 				)
 				(?:
-					(?:\s*\?) | (?: (?&PerlOWS)(?&PerlList))
+					(?:\s*\?) | (?: [(] (?&PerlOWS)(?&PerlList) [)] )
 				)?
 			)*
 		)#</MxpCompactRoleList>
@@ -1333,7 +1333,7 @@ sub _handle_package_keyword {
 	if ($name and $has_sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $code);
-		sprintf(
+		return sprintf(
 			'use Zydeco::_Gather -parent => %s; use Zydeco::_Gather -gather, %s => { code => %s, named => %d, signature => %s }; use Zydeco::_Gather -unparent;',
 			B::perlstring("$plus$name"),
 			B::perlstring("$kind\_generator:$plus$name"),
@@ -1345,7 +1345,7 @@ sub _handle_package_keyword {
 	elsif ($has_sig) {
 		my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $me->_handle_signature_list($sig);
 		my $munged_code = sprintf('sub { q(%s)->_package_callback(sub { my ($generator,%s)=(shift,@_); %s; do %s }, @_) }', $me, $signature_var_list, $extra, $code);
-		sprintf(
+		return sprintf(
 			'q[%s]->anonymous_generator(%s => { code => %s, named => %d, signature => %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
 			$me,
 			$kind,
@@ -1359,7 +1359,7 @@ sub _handle_package_keyword {
 		);
 	}
 	elsif ($name) {
-		$code
+		return $code
 			? sprintf(
 				'use Zydeco::_Gather -parent => %s; use Zydeco::_Gather -gather, %s => q[%s]->_package_callback(sub %s); use Zydeco::_Gather -unparent;',
 				B::perlstring("$plus$name"),
@@ -1374,7 +1374,7 @@ sub _handle_package_keyword {
 	}
 	else {
 		$code ||= '{}';
-		sprintf(
+		return sprintf(
 			'q[%s]->anonymous_package(%s => sub { do %s }, toolkit => %s, prefix => %s, factory_package => %s, type_library => %s)',
 			$me,
 			$kind,
@@ -1640,6 +1640,11 @@ sub import {
 	Keyword::Simple::define class => sub {
 		my $ref = shift;
 		
+#		my $re = _fetch_re('MxpCompactRoleList', anchor => 'start');
+#		my @r  = "Foo with Bar" =~ /($re)/;
+#		use Data::Dumper;
+#		die Dumper($r[0], $re);
+
 		$$ref =~ _fetch_re('MxpClassSyntax', anchor => 'start') or $me->_syntax_error(
 			'class declaration',
 			'class <name> (<signature>) { <block> }',
