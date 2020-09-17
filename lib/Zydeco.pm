@@ -315,7 +315,7 @@ our $GRAMMAR = qr{
 				(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 			)
 			(?:
-				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
+				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlOWS) (?&PerlList) (?&PerlOWS) [)] )
 			)?
 			(?:
 				(?&PerlOWS)
@@ -325,7 +325,7 @@ our $GRAMMAR = qr{
 					(?&PerlBlock) | (?&PerlQualifiedIdentifier)
 				)
 				(?:
-					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
+					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlOWS) (?&PerlList) (?&PerlOWS) [)] )
 				)?
 			)*
 		)#</MxpRoleList>
@@ -337,7 +337,7 @@ our $GRAMMAR = qr{
 				(?&PerlQualifiedIdentifier)
 			)
 			(?:
-				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
+				(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlOWS) (?&PerlList) (?&PerlOWS) [)] )
 			)?
 			(?:
 				(?&PerlOWS)
@@ -347,7 +347,7 @@ our $GRAMMAR = qr{
 					(?&PerlQualifiedIdentifier)
 				)
 				(?:
-					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlList) [)] )
+					(?:\s*\?) | (?: (?&PerlOWS) [(] (?&PerlOWS) (?&PerlList) (?&PerlOWS) [)] )
 				)?
 			)*
 		)#</MxpCompactRoleList>
@@ -973,7 +973,7 @@ sub _handle_role_list {
 			$suffix = '?';
 			$rolelist =~ s/^\?\s*//xs;
 		}
-		elsif ($rolelist =~ /^((?&PerlList)) $GRAMMAR/xso) {
+		elsif ($rolelist =~ /^((?&PerlOWS)(?&PerlList)(?&PerlOWS)) $GRAMMAR/xso) {
 			$role_params = $1;
 			$rolelist =~ s/^\Q$role_params//xs;
 			$rolelist =~ s/^\s+//xs;
