@@ -68,7 +68,7 @@ install:
   - cpan-install "Moose" "MooseX::Enumeration" "Mouse" "MooX::TypeTiny" "MooseX::XSAccessor"
 before_script:
   - coverage-setup
-  - git clone 'git@github.com:tobyink/p5-moox-press.git'
+  - git clone 'https://github.com/tobyink/p5-moox-press.git'
 script:
   - prove -r -Ilib -Iinc -Ip5-moox-press/lib $(test-dirs)
 after_success:
