@@ -13,15 +13,15 @@ package MyApp {
 	class Bar {
 		method get_classes () {
 			my $k1 = do { class; };
-
+			
 			my $k2 = do { class {
-				extends {"::$k1"};
+				extends {$k1};
 				has foo (type => 'Foozle', required => true);
 				class Baz;
 			}};
 			
 			my $k3 = do { class (Int $x) {
-				extends {"::$k1"};
+				extends {$k1};
 				has bar ( type => 'Int', default => $x );
 			}};
 			

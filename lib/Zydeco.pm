@@ -2404,7 +2404,7 @@ sub anonymous_package {
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
 	#return bless(\$qname, "Zydeco::Anonymous::".ucfirst($kind));
-	return $qname;
+	return MooX::Press::make_absolute_package_name($qname);
 }
 
 sub anonymous_generator {
@@ -2419,7 +2419,7 @@ sub anonymous_generator {
 	require Module::Runtime;
 	$INC{Module::Runtime::module_notional_filename($qname)} = __FILE__;
 	#return bless(\$qname, "Zydeco::Anonymous::Parameterizable".ucfirst($kind));
-	return $qname;
+	return MooX::Press::make_absolute_package_name($qname);
 }
 
 1;
