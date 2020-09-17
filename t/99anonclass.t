@@ -57,8 +57,8 @@ isa_ok(
 );
 
 isa_ok(
-        $obj2,
-        substr($k1, 2),
+	$obj2,
+	substr($k1, 2),
 ) if $k1 =~ /^::/;
 
 can_ok(
