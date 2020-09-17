@@ -411,3 +411,9 @@
 	changeset [
 		item "Make even more use of MooX::Press::make_absolute_package_name()."^^Change;
 	].
+
+`Zydeco 0.608 cpan:TOBYINK`
+	issued  2020-09-17;
+	changeset [
+		item "Fix parsing whitespace around lists of parameterized role parameters."^^Change;
+	].
