@@ -56,6 +56,11 @@ isa_ok(
 	$k1,
 );
 
+isa_ok(
+        $obj2,
+        substr($k1, 2),
+) if $k1 =~ /^::/;
+
 can_ok(
 	$k3,
 	'generate_package',
@@ -69,9 +74,17 @@ isnt(
 my $k4 = $k3->generate_package(666);
 
 my $obj4 = $k4->new;
+
 is($obj4->bar, 666);
 is($obj4->FACTORY, 'MyApp');
-is($obj4->GENERATOR, $k3);
+
+my $canon = sub {
+	local $_ = shift;
+	s/(main)?::// while /(main)?::/;
+	$_;
+};
+
+is($obj4->GENERATOR->$canon, $k3->$canon);
 
 my $baz = MyApp->new_baz;
 

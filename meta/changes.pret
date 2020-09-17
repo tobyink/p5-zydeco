@@ -405,3 +405,9 @@
 			seealso <https://github.com/tobyink/p5-zydeco/issues/5>;
 		];
 	].
+
+`Zydeco 0.607 cpan:TOBYINK`
+	issued  2020-09-17;
+	changeset [
+		item "Make even more use of MooX::Press::make_absolute_package_name()."^^Change;
+	].
