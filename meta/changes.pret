@@ -417,3 +417,9 @@
 	changeset [
 		item "Fix parsing whitespace around lists of parameterized role parameters."^^Change;
 	].
+
+`Zydeco 0.609 cpan:TOBYINK`
+	issued  2020-09-19;
+	changeset [
+		item "Require latest MooX::Press as 0.073 and 0.074 have buggy handling of type constraints for tag roles."^^Packaging;
+	].
