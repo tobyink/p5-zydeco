@@ -1661,7 +1661,7 @@ sub import {
 		$plus  ||= '';
 		$block ||= '{}';
 		
-		$me->_inject($ref, $pos, "\n#\n#\n#\n#\n".$me->_handle_package_keyword(class => $name, $version, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
+		$me->_inject($ref, $pos, $me->_handle_package_keyword(class => $name, $version, $compact_extends, $compact_with, $block, $has_sig, $sig, $plus, \%opts), 1);
 	} if $want{class};
 
 	Keyword::Simple::define abstract => sub {
