@@ -433,3 +433,10 @@
 			seealso <https://github.com/tobyink/p5-zydeco/issues/7>;
 		];
 	].
+
+`Zydeco 0.611 cpan:TOBYINK`
+	issued  2020-09-23;
+	changeset [
+		item "Pass `definition_context` through to MooX::Press for methods, factories, classes, roles, attributes, etc."^^Change;
+		item "Moose metaclass example."^^Documentation;
+	].
