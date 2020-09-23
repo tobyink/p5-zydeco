@@ -1032,7 +1032,7 @@ my $_should_optimize = sub {
 	1;
 };
 
-my $DCTX = sprintf( 'definition_context => { file => __FILE__, line => __LINE__, package => __PACKAGE__, via => q(%s) }', __PACKAGE__);
+my $DCTX = sprintf( 'definition_context => { file => __FILE__, line => __LINE__, package => __PACKAGE__, via => q(%s) }', __PACKAGE__ );
 
 sub _handle_factory_keyword {
 	my ($me, $name, $via, $code, $has_sig, $sig, $attrs) = @_;
