@@ -440,3 +440,9 @@
 		item "Pass `definition_context` through to MooX::Press for methods, factories, classes, roles, attributes, etc."^^Change;
 		item "Moose metaclass example."^^Documentation;
 	].
+
+`Zydeco 0.612 cpan:TOBYINK`
+	issued  2020-10-10;
+	changeset [
+		item "New `symmethod` keyword."^^Addition;
+	].
