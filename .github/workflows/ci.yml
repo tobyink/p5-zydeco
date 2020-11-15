@@ -117,7 +117,8 @@ jobs:
           cpanm App::GhaProve
       - name: Install extra dependencies
         if: matrix.extra_dependencies || matrix.coverage
-        run: cpanm -n --installdeps --with-recommends --with-suggests ./build
+        shell: bash
+        run: cpanm -n --installdeps --with-recommends --with-suggests ./build || echo 1
       - name: Install coverage dependencies
         if: matrix.coverage
         run: |
