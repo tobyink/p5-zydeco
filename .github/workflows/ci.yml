@@ -113,12 +113,12 @@ jobs:
         run: perl Makefile.PL
       - name: Install dependencies
         run: |
-          cpanm -n --installdeps ./build
           cpanm App::GhaProve
+          cpanm -n --installdeps ./build
       - name: Install extra dependencies
         if: matrix.extra_dependencies || matrix.coverage
         shell: bash
-        run: cpanm -n --installdeps --with-recommends --with-suggests ./build || echo 1
+        run: cpanm -n --installdeps --with-recommends --with-suggests ./build || true
       - name: Install coverage dependencies
         if: matrix.coverage
         run: |
