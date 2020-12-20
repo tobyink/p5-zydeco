@@ -271,7 +271,7 @@ A common pattern is to use one attribute to help set the default for another.
     );
   }
 
-Note that during object instatiation, there is no guaranteed order which
+Note that during object instantiation, there is no guaranteed order which
 attributes will be processed, so to prevent C<name_parts>'s default from
 being processed before C<name> is ready, it is made lazy.
 
