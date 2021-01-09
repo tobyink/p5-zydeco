@@ -8,7 +8,7 @@
 [![Codecov](https://codecov.io/gh/tobyink/p5-zydeco/branch/master/graph/badge.svg)](https://codecov.io/gh/tobyink/p5-zydeco)
 
 Perl 5 distribution Zydeco; see [homepage](https://zydeco.toby.ink/)
-for download, issue tracker, and more info.
+for downloads and documentation.
 
 Directy installing from GitHub is not recommened; download the distribution
 from the CPAN.
