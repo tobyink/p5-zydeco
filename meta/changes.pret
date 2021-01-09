@@ -456,4 +456,8 @@
 			seealso <https://github.com/tobyink/p5-zydeco/pull/8>;
 			dcs:blame cpan:SMONFF;
 		];
+		item [
+			a dcs:Packaging;
+			label "Move issue tracker to GitHub.";
+		];
 	].
