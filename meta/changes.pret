@@ -446,3 +446,14 @@
 	changeset [
 		item "New `symmethod` keyword."^^Addition;
 	].
+
+`Zydeco 0.613 cpan:TOBYINK`
+	issued  2020-01-09;
+	changeset [
+		item [
+			a dcs:Documentation;
+			label "Fixes for some typos.";
+			seealso <https://github.com/tobyink/p5-zydeco/pull/8>;
+			dcs:blame cpan:SMONFF;
+		];
+	].

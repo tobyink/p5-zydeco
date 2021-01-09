@@ -7,3 +7,5 @@ cpan:TOBYINK
 	:page  <https://metacpan.org/author/TOBYINK>;
 	:mbox  <mailto:tobyink@cpan.org>.
 
+cpan:SMONFF
+	:name  "Sébastien Feugère".
