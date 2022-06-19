@@ -79,7 +79,7 @@ jobs:
       fail-fast: true
       matrix:
         os:                 [ 'ubuntu-latest' ]
-        perl:               [ '5.14', '5.16', '5.18', '5.22', '5.24', '5.26', '5.28', '5.30', '5.32' ]
+        perl:               [ '5.14', '5.16', '5.18', '5.22', '5.24', '5.26', '5.28', '5.30', '5.32', '5.34', '5.36' ]
         coverage:           [ false ]
         threaded:           [ null ]
         extra_dependencies: [ true ]
@@ -88,7 +88,7 @@ jobs:
           - { os: 'windows-latest', perl: '5.4' }
         include:
           - os: 'ubuntu-latest'
-            perl: '5.30'
+            perl: '5.36'
             threaded: false
             coverage: true
             extra_dependencies: true
