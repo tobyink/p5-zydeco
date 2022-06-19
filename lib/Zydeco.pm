@@ -615,7 +615,7 @@ our $GRAMMAR = qr{
 			(?&PerlOWS)
 			(?: method | factory )                        # CAPTURE:kind
 			(?&PerlOWS)
-			(?: (?&MxpSimpleIdentifier) )                 # CAPTURE:name
+			(?: \$? (?&MxpSimpleIdentifier) )             # CAPTURE:name
 			(?&PerlOWS)
 			(?: ( (?&MxpAttribute) (?&PerlOWS) )+ )?      # CAPTURE:attributes
 			(?&PerlOWS)
@@ -1208,6 +1208,10 @@ sub _handle_method_keyword {
 sub _handle_multi_keyword {
 	my $me = shift;
 	my ($kind, $name, $code, $has_sig, $sig, $attrs) = @_;
+	
+	if ( $name =~ /^\$/ ) {
+		$name = "{ \\$name }";
+	}
 	
 	my ($signature_is_named, $signature_var_list, $type_params_stuff, $extra) = $has_sig ? $me->_handle_signature_list($sig) : ();
 	
