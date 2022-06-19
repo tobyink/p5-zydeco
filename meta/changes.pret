@@ -461,3 +461,12 @@
 			label "Move issue tracker to GitHub.";
 		];
 	].
+
+`Zydeco 0.614 cpan:TOBYINK`
+	issued  2022-06-19;
+	changeset [
+		item [
+			a dcs:Addition;
+			label "Support coderef multimethods.";
+		];
+	].
