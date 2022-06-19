@@ -2913,6 +2913,12 @@ class will not be able to see functions exported into the class.
   multi method myfunc ( HashRef *collection, Int *index ) {
     ...;
   }
+  
+  # lexical multimethod - make sure you declare the variable first
+  #
+  my $otherfunc;
+  multi method $otherfunc ( CodeRef $x ) { ... }
+  multi method $otherfunc ( HashRef $x ) { ... }
 
 =head2 C<< requires >>
 
