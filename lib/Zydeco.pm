@@ -94,6 +94,7 @@ BEGIN {
 			
 			if ($gather{$me}{$caller}{debug}) {
 				require Data::Dumper;
+				local $Data::Dumper::Deparse = 1;
 				warn Data::Dumper::Dumper($gather{$me}{$caller});
 			}
 			
