@@ -10,12 +10,16 @@
 Perl 5 distribution Zydeco; see [homepage](https://zydeco.toby.ink/)
 for downloads and documentation.
 
-Directy installing from GitHub is not recommened; download the distribution
+Directly installing from GitHub is not recommened; download the distribution
 from the CPAN.
 
 ## Issues
 
 Please report any issues via [GitHub Issues](https://github.com/tobyink/p5-zydeco/issues).
+
+## Contributing
+
+[Contributing guidelines](https://toby.ink/open-source/contributing/).
 
 ## Support this project
 
