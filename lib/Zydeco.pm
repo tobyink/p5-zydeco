@@ -176,32 +176,32 @@ our $GRAMMAR = qr{
 	
 		(?<PerlKeyword>
 		
-			(?: include         (?&MxpIncludeSyntax)   )|
-			(?: class           (?&MxpClassSyntax)     )|
-			(?: abstract        (?&MxpAbstractSyntax)  )|
-			(?: role            (?&MxpRoleSyntax)      )|
-			(?: interface       (?&MxpRoleSyntax)      )|
-			(?: toolkit         (?&MxpToolkitSyntax)   )|
-			(?: begin           (?&MxpHookSyntax)      )|
-			(?: end             (?&MxpHookSyntax)      )|
-			(?: after_apply     (?&MxpHookSyntax)      )|
-			(?: before_apply    (?&MxpHookSyntax)      )|
-			(?: type_name       (?&MxpTypeNameSyntax)  )|
-			(?: extends         (?&MxpExtendsSyntax)   )|
-			(?: with            (?&MxpWithSyntax)      )|
-			(?: requires        (?&MxpWithSyntax)      )|
-			(?: has             (?&MxpHasSyntax)       )|
-			(?: constant        (?&MxpConstantSyntax)  )|
-			(?: coerce          (?&MxpCoerceSyntax)    )|
-			(?: method          (?&MxpMethodSyntax)    )|
-			(?: factory         (?&MxpFactorySyntax)   )|
-			(?: factory         (?&MxpFactoryViaSyntax))|
-			(?: symmethod       (?&MxpSymMethodSyntax) )|
-			(?: before          (?&MxpModifierSyntax)  )|
-			(?: after           (?&MxpModifierSyntax)  )|
-			(?: around          (?&MxpModifierSyntax)  )|
-			(?: multi           (?&MxpMultiSyntax)     )|
-			(?: try             (?&TrySyntax)          )
+			(?: include              (?&MxpIncludeSyntax)   )|
+			(?: class                (?&MxpClassSyntax)     )|
+			(?: abstract             (?&MxpAbstractSyntax)  )|
+			(?: role                 (?&MxpRoleSyntax)      )|
+			(?: interface            (?&MxpRoleSyntax)      )|
+			(?: toolkit              (?&MxpToolkitSyntax)   )|
+			(?: begin                (?&MxpHookSyntax)      )|
+			(?: end                  (?&MxpHookSyntax)      )|
+			(?: after_apply          (?&MxpHookSyntax)      )|
+			(?: before_apply         (?&MxpHookSyntax)      )|
+			(?: type_name            (?&MxpTypeNameSyntax)  )|
+			(?: extends              (?&MxpExtendsSyntax)   )|
+			(?: with                 (?&MxpWithSyntax)      )|
+			(?: requires             (?&MxpWithSyntax)      )|
+			(?: (?:has|field|param)  (?&MxpHasSyntax)       )|
+			(?: constant             (?&MxpConstantSyntax)  )|
+			(?: coerce               (?&MxpCoerceSyntax)    )|
+			(?: method               (?&MxpMethodSyntax)    )|
+			(?: factory              (?&MxpFactorySyntax)   )|
+			(?: factory              (?&MxpFactoryViaSyntax))|
+			(?: symmethod            (?&MxpSymMethodSyntax) )|
+			(?: before               (?&MxpModifierSyntax)  )|
+			(?: after                (?&MxpModifierSyntax)  )|
+			(?: around               (?&MxpModifierSyntax)  )|
+			(?: multi                (?&MxpMultiSyntax)     )|
+			(?: try                  (?&TrySyntax)          )
 		)#</PerlKeyword>
 		
 		(?<MxpSimpleIdentifier>
@@ -1439,7 +1439,7 @@ sub _handle_package_keyword {
 }
 
 sub _handle_has_keyword {
-	my ($me, $names, $rawspec, $default) = @_;
+	my ($me, $kw, $names, $rawspec, $default) = @_;
 	
 	$rawspec = '()' if !defined $rawspec;
 	
@@ -1453,6 +1453,8 @@ sub _handle_has_keyword {
 	elsif (defined $default) {
 		$rawspec = "default => sub { $default }, $rawspec";
 	}
+	
+	$rawspec = "_has_keyword => q[$kw], $rawspec";
 	
 	my @names = $me->_handle_name_list($names);
 	
@@ -1583,7 +1585,8 @@ my @EXPORTABLES = qw(
 	class abstract role interface
 	begin end before_apply after_apply
 	include toolkit extends with requires
-	has constant method symmethod multi factory before after around
+	has field param
+	constant method symmethod multi factory before after around
 	type_name coerce
 	version authority overload
 );
@@ -1593,7 +1596,8 @@ sub unimport {
 	class abstract role interface
 	begin end before_apply after_apply
 	include toolkit extends with requires
-	has constant method symmethod multi factory before after around
+	has field param
+	constant method symmethod multi factory before after around
 	type_name coerce
 	version authority overload
 	>;
@@ -1888,25 +1892,27 @@ sub import {
 		$me->_inject($ref, $pos, $me->_handle_requires_keyword($name, $has_sig, $sig));
 	} if $want{requires};
 	
-	# `has` keyword
+	# `has`, `field`, and `param` keyword
 	#
-	Keyword::Simple::define has => sub {
-		my $ref = shift;
-		
-		$$ref =~ _fetch_re('MxpHasSyntax', anchor => 'start') or $me->_syntax_error(
-			'attribute declaration',
-			'has <names> (<spec>) = <default>',
-			'has <names> (<spec>)',
-			'has <names> = <default>',
-			'has <names>',
-			$ref,
-		);
-		
-		my ($pos, $name, $spec, $default) = ($+[0],  $+{name}, $+{spec}, $+{default});
-		my $has_spec    = !!exists $+{spec};
-		my $has_default = !!exists $+{default};
-		$me->_inject($ref, $pos, $me->_handle_has_keyword($name, $has_spec ? $spec : undef, $has_default ? $default : undef));
-	} if $want{has};
+	for my $kw ( qw/ has field param / ) {
+		Keyword::Simple::define $kw => sub {
+			my $ref = shift;
+			
+			$$ref =~ _fetch_re('MxpHasSyntax', anchor => 'start') or $me->_syntax_error(
+				'attribute declaration',
+				"$kw <names> (<spec>) = <default>",
+				"$kw <names> (<spec>)",
+				"$kw <names> = <default>",
+				"$kw <names>",
+				$ref,
+			);
+			
+			my ($pos, $name, $spec, $default) = ($+[0],  $+{name}, $+{spec}, $+{default});
+			my $has_spec    = !!exists $+{spec};
+			my $has_default = !!exists $+{default};
+			$me->_inject($ref, $pos, $me->_handle_has_keyword($kw, $name, $has_spec ? $spec : undef, $has_default ? $default : undef));
+		} if $want{$kw};
+	}
 	
 	# `constant` keyword
 	#
@@ -2196,6 +2202,21 @@ sub PACKAGE_SPEC {
 sub _has {
 	my $me = shift;
 	my ($attr, %spec) = @_;
+	
+	my $kw = delete( $spec{_has_keyword} ) // 'has';
+	if ( $kw eq 'param' ) {
+		$spec{required} //= 1;
+	}
+	elsif ( $kw eq 'field' ) {
+		$spec{init_arg} //= undef;
+		if (exists $spec{default} || exists $spec{builder}) {
+			$spec{lazy} //= 1;
+		}
+		if ( defined( my $init_arg = $spec{init_arg} ) ) {
+			$init_arg =~ /\A_/ or
+			$me->_syntax_error('attribute declaration', 'If init_arg for field is defined, must start with underscore');
+		}
+	}
 	
 	_define_or_patch { $_->{has}{$attr} = \%spec } or
 	$me->_syntax_error('attribute declaration', 'Not supported outside class or role');
