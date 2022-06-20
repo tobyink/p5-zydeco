@@ -470,3 +470,16 @@
 			label "Support coderef multimethods.";
 		];
 	].
+
+`Zydeco 0.615 cpan:TOBYINK`
+	issued  2022-06-20;
+	changeset [
+		item [
+			a dcs:Addition;
+			label "Steal `param` from MooseX::Extended.";
+		];
+		item [
+			a dcs:Addition;
+			label "Steal `field` from MooseX::Extended.";
+		];
+	].
