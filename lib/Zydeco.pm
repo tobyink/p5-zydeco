@@ -2205,16 +2205,18 @@ sub _has {
 	
 	my $kw = delete( $spec{_has_keyword} ) // 'has';
 	if ( $kw eq 'param' ) {
-		$spec{required} //= 1;
+		unless ( exists $spec{default} or exists $spec{builder} ) {
+			$spec{required} //= 1;
+		}
 	}
 	elsif ( $kw eq 'field' ) {
 		$spec{init_arg} //= undef;
-		if (exists $spec{default} || exists $spec{builder}) {
-			$spec{lazy} //= 1;
-		}
 		if ( defined( my $init_arg = $spec{init_arg} ) ) {
 			$init_arg =~ /\A_/ or
 			$me->_syntax_error('attribute declaration', 'If init_arg for field is defined, must start with underscore');
+		}
+		if ( !exists $spec{default} and !exists $spec{builder} ) {
+			$spec{is} //= 'rwp';
 		}
 	}
 	
@@ -2870,6 +2872,23 @@ class will not be able to see functions exported into the class.
   class MyClass {
     has name     = "Anonymous";
     has uc_name  = uc($self->name);
+  }
+
+=head2 C<< param >>
+
+Synonym for C<has> but defaults to C<< required => true >>.
+
+  class MyClass {
+    param foo ( type => Str );
+  }
+
+=head2 C<< field >>
+
+Synonym for C<has> but defaults to C<< init_arg => undef >>.
+
+  class MyClass {
+    field foo ( builder => true );
+    method _build_foo { ... }
   }
 
 =head2 C<< constant >>
