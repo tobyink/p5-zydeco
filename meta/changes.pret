@@ -483,3 +483,12 @@
 			label "Steal `field` from MooseX::Extended.";
 		];
 	].
+
+`Zydeco 0.616 cpan:TOBYINK`
+	issued  2022-07-19;
+	changeset [
+		item [
+			a dcs:Packaging;
+			label "Require latest MooX::Press.";
+		];
+	].
