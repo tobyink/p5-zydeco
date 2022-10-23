@@ -492,3 +492,12 @@
 			label "Require latest MooX::Press.";
 		];
 	].
+
+`Zydeco 0.617 cpan:TOBYINK`
+	issued  2022-10-23;
+	changeset [
+		item [
+			a dcs:Tests;
+			label "Don't require Devel::TypeTiny::Perl56Compat in test suite.";
+		];
+	].
